@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Ritmo</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+:root{--bg:#1E1B3C;--ink:#ECEBFF;--muted:#B5B2DA;--line:#2E2A55;--accent:#8F86FF;--accent-ink:#0F0D24}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--ink);font-family:"Segoe UI",system-ui,sans-serif;-webkit-user-select:none;user-select:none}
+body{display:flex;flex-direction:column;gap:10px;padding:20px 22px;background:linear-gradient(135deg,#4A3ECF,#7447D9 60%,#A24CCB);-webkit-app-region:drag}
+body.k-wind,body.k-bed{background:linear-gradient(135deg,#25235E,#4C43A8)}body.k-go{background:linear-gradient(135deg,#EC7A32,#F5B44E)}body.k-ping{background:linear-gradient(135deg,#2F7FD8,#4FB3E6)}body.k-soft{background:linear-gradient(135deg,#169F78,#4CCB9C)}
+.kind{font-size:12px;letter-spacing:.08em;text-transform:uppercase;color:rgba(255,255,255,.8);font-weight:700}
+h1{margin:0;font-size:24px;line-height:1.15}
+body.small h1{font-size:18px}
+p{margin:0;color:rgba(255,255,255,.85);font-size:15px;line-height:1.4}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin-top:auto;-webkit-app-region:no-drag}
+button{font:inherit;font-weight:700;font-size:14px;border-radius:12px;border:0;background:rgba(255,255,255,.2);color:#fff;padding:9px 14px;cursor:pointer}
+button.primary{background:#fff;color:#3D33B8}
+button:hover{filter:brightness(1.12)}
+button:focus-visible{outline:3px solid var(--ink);outline-offset:2px}
+</style></head>
+<body>
+<span class="kind" id="k">Ritmo</span>
+<h1 id="t"></h1>
+<p id="b"></p>
+<div class="row" id="btns"></div>
+<script>
+const d = JSON.parse(decodeURIComponent(location.hash.slice(1) || '%7B%7D'));
+document.body.className = (d.big ? '' : 'small ') + 'k-' + (d.kind || 'task');
+const now = new Date();
+document.getElementById('k').textContent = 'Ritmo · ' + String(now.getHours()).padStart(2, '0') + ':' + String(now.getMinutes()).padStart(2, '0');
+document.getElementById('t').textContent = d.title || '';
+document.getElementById('b').textContent = d.body || '';
+const box = document.getElementById('btns');
+(d.buttons || [['ok', 'Entendido']]).forEach(([act, label], i) => {
+  const b = document.createElement('button');
+  b.textContent = label; if (i === 0) b.className = 'primary';
+  b.onclick = () => window.ritmoDesktop.act(d.key, act);
+  box.appendChild(b);
+});
+box.firstChild && box.firstChild.focus();
+if (!d.big) setTimeout(() => window.ritmoDesktop.act(d.key, 'ok'), 60000);
+</script>
+</body></html>
