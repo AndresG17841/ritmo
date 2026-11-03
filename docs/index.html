@@ -1686,7 +1686,8 @@ function finForm(f){
 function render(){
   const tab=UI.tab;
   document.querySelector('nav.tabs').hidden=!!UI.auth;
-  if(UI.auth){document.getElementById('pagetitle').textContent='Ritmo';document.getElementById('view').innerHTML=vLogin();return}
+  const fabEl=document.getElementById('fab');if(fabEl)fabEl.hidden=!!UI.auth;
+  if(UI.auth){const n0=new Date();document.getElementById('pagetitle').textContent='Ritmo';document.getElementById('dateline').textContent=longDate(dkey(n0));document.getElementById('clock').textContent=fmt(n0.getHours()*60+n0.getMinutes());setSync('','Entra para sincronizar');document.getElementById('view').innerHTML=vLogin();return}
   document.querySelectorAll('nav.tabs a').forEach(a=>a.classList.toggle('sel',a.dataset.tab===tab));
   const titles={ahora:'Ahora',dia:'Tu día',tareas:'Tareas',bien:'Bienestar',plata:'Finanzas',ajustes:'Ajustes'};
   document.getElementById('pagetitle').textContent=titles[tab];
