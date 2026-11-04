@@ -321,6 +321,45 @@ nav.tabs a.sel{background:var(--grad);color:#fff;box-shadow:0 6px 16px rgba(91,7
 .fabmenu button i{width:38px;height:38px;border-radius:13px;background:var(--accent-soft);color:var(--accent);display:flex;align-items:center;justify-content:center}
 .fabmenu button i svg{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
 
+/* Reorganización */
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:-6px}
+.mini-chip{display:inline-flex;align-items:center;gap:6px;min-height:34px;padding:6px 12px;border-radius:99px;background:var(--surface);box-shadow:var(--shadow-sm);font-size:.85rem;font-weight:600;color:var(--ink);border:0}
+.mini-chip i{display:inline-flex;width:18px;height:18px;color:var(--accent)}.mini-chip i svg{width:18px;height:18px;stroke:currentColor;fill:none;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.mini-chip.on{background:var(--grad);color:#fff}.mini-chip.on i{color:#fff}
+.mini-chip.warn{background:var(--warm-soft);box-shadow:none}.mini-chip.warn i{color:var(--warm)}.mini-chip.calm{background:var(--accent-soft);box-shadow:none}
+.alert.compact{padding:10px 14px;gap:6px}
+.warnline{font-size:.88rem;color:var(--warm);background:var(--warm-soft);border-radius:12px;padding:8px 12px}
+nav.tabs a{position:relative}
+.badge{position:absolute;top:2px;right:calc(50% - 22px);min-width:18px;height:18px;padding:0 5px;border-radius:99px;font-size:.68rem;font-weight:800;line-height:18px;text-align:center;color:#fff;box-shadow:0 0 0 2px var(--surface)}
+.badge.dot{min-width:11px;width:11px;height:11px;padding:0;top:6px;right:calc(50% - 16px)}
+.b-ok{background:#1FAF83}.b-warn{background:#EF8436}.b-risk{background:#E5484D}
+.tlist{display:flex;flex-direction:column;gap:10px}
+.tcard{border-radius:18px;background:var(--sunk);overflow:hidden;position:relative}
+.tcard::before{content:"";position:absolute;left:0;top:0;bottom:0;width:6px;background:var(--sc,var(--accent))}
+.trow{display:flex;align-items:center;gap:12px;width:100%;background:transparent;box-shadow:none;border-radius:0;padding:12px 14px 12px 18px;text-align:left;font-weight:400;min-height:60px}
+.trow:hover{box-shadow:none}
+.tdot{width:12px;height:12px;border-radius:50%;background:var(--sc,var(--accent));flex:0 0 auto;box-shadow:0 0 0 4px color-mix(in srgb,var(--sc,var(--accent)) 20%,transparent)}
+.tmain{display:flex;flex-direction:column;min-width:0;flex:1}.tmain b{display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;line-height:1.25}.tmain small{color:var(--muted);font-size:.8rem}
+.chev{color:var(--muted);font-size:.8rem}
+.s-bien{--sc:#1FAF83}.s-casi{--sc:#2F8BDB}.s-ajustado{--sc:#EF8436}.s-riesgo{--sc:#E5484D}.s-espera{--sc:#9C98C9}
+.tdetail{display:flex;flex-direction:column;gap:10px;padding:0 16px 16px 18px}
+.tdetail .row .small{min-height:36px}
+.habit-toggles{display:flex;flex-wrap:wrap;gap:8px}
+.htog{display:inline-flex;align-items:center;gap:8px;background:var(--sunk);border-radius:14px;padding:10px 14px;font-weight:600;box-shadow:none}
+.htog i{width:22px;height:22px;border-radius:8px;border:2px solid var(--line);display:inline-flex;align-items:center;justify-content:center;font-style:normal;font-size:.8rem;color:#fff}
+.htog.on{background:var(--accent-soft);color:var(--accent)}.htog.on i{background:var(--grad);border-color:transparent}
+.htog small{font-weight:400;color:var(--muted)}
+.primary.big{min-height:58px;font-size:1.05rem;border-radius:18px}
+.grid3{display:grid;grid-template-columns:repeat(auto-fit,minmax(112px,1fr));gap:8px}.grid3 input{font-size:.95rem;padding-inline:8px}.grid3 label.f{min-width:0}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.hab{display:flex;flex-direction:column;gap:8px}
+.hab-top{display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.hab-week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.hd{display:flex;flex-direction:column;align-items:center;gap:3px}
+.hd i{width:100%;max-width:38px;aspect-ratio:1;border-radius:12px;background:var(--sunk)}
+.hd.on i{background:var(--grad)}
+.hd.today i{outline:2px solid var(--accent);outline-offset:2px}
+.hd small{font-size:.7rem;color:var(--muted)}
 /* Gráfica de sueño en curva */
 .wave text{font-family:var(--body);font-size:11px;fill:var(--muted)}
 .wave .today{fill:var(--ink);font-weight:700}
@@ -770,38 +809,19 @@ function vAhora(){
   const tasks=state.tasks.items;const act=state.tasks.active;
   const cur=T.blocks.filter(b=>b.start<=now&&b.end>now).sort((a,b)=>prio(b)-prio(a))[0];
   const next=T.blocks.filter(b=>b.start>now&&b.type!=='sleep').slice(0,4);
-  const risk=tasks.filter(t=>!t.done&&P.info[t.id]&&P.info[t.id].status==='riesgo');
-  const tight=tasks.filter(t=>!t.done&&P.info[t.id]&&P.info[t.id].status==='ajustado');
-  const allGood=!risk.length;
-  let h=importBanner();
-  if(T.away)h+=`<div class="alert calm"><b>${esc(T.away.label)}</b><span>Hoy no hay tareas planeadas. Disfruta, ya reacomodé todo para cuando vuelvas.</span></div>`;
-  else if(T.vac)h+=`<div class="alert calm"><b>Estás en vacaciones.</b><span>Sin clases ni trayectos. El plan usa tus horarios de fin de semana.</span></div>`;
-  else if(T.holiday)h+=`<div class="alert calm"><b>Hoy es festivo.</b><span>No cuento clases hoy.</span></div>`;
-
-  const overdue=state.config.commitments.find(c=>c.open&&!c.done&&c.date===P.today&&toMin(c.end)<=now&&now<toMin(c.end)+180);
-  if(overdue)h+=`<div class="alert warn"><b>¿Ya terminaste "${esc(overdue.label)}"?</b><span>Te reservé hasta las ${overdue.end}.</span>
-    <div class="row"><button class="primary small" data-act="commit-done" data-id="${overdue.id}">Ya terminé</button><button class="small" data-act="commit-more" data-id="${overdue.id}">Sigo ocupado (+30 min)</button></div></div>`;
-  const J0=state.journal.days[P.today]||{};
-  const ping=(T.pings||[]).filter(p=>p.min<=now&&now<p.min+60).pop();
-  if(ping&&!((J0.pingDone||{})[ping.id]>=ping.min)&&!T.blocks.some(b=>b.type==='sleep'&&now>=b.start&&now<b.end)){
-    const cnt=(J0.count||{})[ping.id]||0;
-    h+=`<div class="alert calm"><b>${ping.id==='water'?'Toma un vaso de agua':esc(ping.name)}</b><span class="muted">${cnt?`Hoy van ${cnt}.`:'El primero del día.'}</span>
-      <div class="row"><button class="small primary" data-act="ping-done" data-id="${ping.id}" data-min="${ping.min}">Listo</button><button class="small ghost" data-act="ping-skip" data-id="${ping.id}" data-min="${ping.min}">Ahora no</button></div></div>`;
-  }
-  const waitT=state.tasks.items.filter(t=>!t.done&&t.waitingFor);
-  if(waitT.length)h+=`<div class="alert warn"><b>Pendiente de otra persona</b>${waitT.map(t=>`<span>${esc(t.name)}: escríbele a ${esc(t.waitingFor)} para cuadrar${t.waitingSince&&t.waitingSince<P.today?` (esperas desde ${relDay(t.waitingSince,P.today)})`:''}.</span>`).join('')}<div class="row">${waitT.map(t=>`<button class="small" data-act="unwait" data-id="${t.id}">Ya cuadramos: ${esc(t.name.slice(0,24))}</button>`).join('')}</div></div>`;
+  const allGood=!tasks.some(t=>!t.done&&P.info[t.id]&&P.info[t.id].status==='riesgo');
+  let h='';
+  if(typeof importBanner==='function')h+=importBanner();
+  // 1. Lo que estás haciendo
   const ca=state.journal.commuteActive;
   if(ca){
     h+=`<section class="now t-commute"><span class="kind">En camino</span><h2>${ca.dir==='ida'?'Hacia la U':'Hacia la casa'}</h2>
       <div class="timer" data-elapsed="${ca.leftAt}">00:00</div>
-      <p class="muted">Saliste a las <span class="time">${fmt(new Date(ca.leftAt).getHours()*60+new Date(ca.leftAt).getMinutes())}</span>. Toca "Llegué" apenas llegues y aprendo cuánto te demoras de verdad.</p>
-      <div class="row"><button class="primary" data-act="arrived">Llegué</button><button data-act="flip-dir">Cambiar a ${ca.dir==='ida'?'hacia la casa':'hacia la U'}</button><button class="ghost danger" data-act="cancel-trip">Cancelar</button></div></section>`;
-  }
-  if(act){
+      <div class="row"><button class="primary" data-act="arrived">Llegué</button><button data-act="flip-dir">Voy ${ca.dir==='ida'?'a casa':'a la U'}</button><button class="ghost" data-act="cancel-trip">Cancelar</button></div></section>`;
+  }else if(act){
     const t=tasks.find(x=>x.id===act.taskId);
     h+=`<section class="now t-task"><span class="kind">Trabajando en</span><h2>${esc(t?t.name:'Tarea')}</h2>
       <div class="timer" data-elapsed="${act.start}">00:00</div>
-      <p class="muted">Cuando pares, guardo el tiempo real. Así aprendo cuánto te toman las cosas de verdad.</p>
       <div class="row"><button class="primary" data-act="stop">Pausar y guardar</button><button data-act="finish-active">Terminé la tarea</button></div></section>`;
   }else if(cur){
     h+=nowCard(cur,T,P,allGood,next);
@@ -809,33 +829,61 @@ function vAhora(){
     const nx=next[0];
     h+=`<section class="now t-open"><span class="kind">Ahora mismo</span><h2>${allGood?'Rato libre':'Un respiro'}</h2><p>${nx?`Lo siguiente: <b>${esc(nx.title)}</b> a las <span class="time">${fmt(nx.start)}</span>.`:'No hay nada más planeado hoy.'}</p></section>`;
   }
-  // Aviso de salida
-  const nc=next.find(b=>b.type==='commute'&&b.start-now<=20&&!/Volver/.test(b.title));
-  if(nc)h+=`<div class="alert warn"><b>Sal en ${nc.start-now} min</b><span>Si sales a las ${fmt(nc.start)} llegas tranquilo, sin correr.</span></div>`;
-
-  h+=`<div class="quick">
-    ${ca?'':`<button data-act="left" data-dir="${guessDir(T,now)}"><i class="qi">${ICON.walk}</i>Salí ${guessDir(T,now)==='ida'?'a la U':'a casa'}<span>Mido el trayecto</span></button>`}
-    <button data-act="sheet-commit"><i class="qi">${ICON.bolt}</i>Me salió algo<span>Y recalculo</span></button>
-    <button data-act="tired" class="${T.tired?'on':''}"><i class="qi">${ICON.battery}</i>${T.tired?'Agotado ✓':'Estoy agotado'}<span>${T.tired?'Máx. 1 h hoy':'Bajo el trabajo'}</span></button>
-    ${!(state.journal.days[P.today]||{}).wokeAt?`<button data-act="go" data-tab="registro"><i class="qi">${ICON.bed}</i>¿Cómo dormiste?<span>10 segundos</span></button>`:''}
-    <button data-act="go" data-tab="tareas"><i class="qi">${ICON.plus}</i>Nueva tarea<span>Te digo cuándo</span></button>
-  </div>`;
-
-  if(risk.length){
-    h+=`<div class="alert"><b>${risk.length===1?'Una tarea no alcanza':'Hay '+risk.length+' tareas que no alcanzan'} con tu tiempo disponible</b>
-      ${risk.map(t=>`<span>${esc(t.name)}: faltan ${dur(P.info[t.id].short)} de espacio antes de la entrega.</span>`).join('')}
-      <span class="muted">Opciones: pide más plazo, sube el límite diario en Ajustes o usa algún rato de "Tiempo tuyo". Lo que no hago es quitarte sueño.</span></div>`;
-  }else if(tight.length){
-    h+=`<div class="alert warn"><b>Ajustado, pero alcanza</b>${tight.map(t=>`<span>${esc(t.name)} termina después del margen de seguridad.</span>`).join('')}</div>`;
+  // 2. Fila compacta: estado del día
+  const chips=[];
+  chips.push(`<button class="mini-chip ${T.tired?'on':''}" data-act="tired"><i>${ICON.battery}</i>${T.tired?'Agotado: máx. 1 h':'Estoy agotado'}</button>`);
+  const nc=next.find(b=>b.type==='commute'&&/^Ir /.test(b.title)&&b.start-now<=30);
+  if(nc&&!ca)chips.push(`<span class="mini-chip warn"><i>${ICON.walk}</i>Sal a las ${fmt(nc.start)}</span>`);
+  if(T.away)chips.push(`<span class="mini-chip calm">${esc(T.away.label)}: sin tareas</span>`);
+  else if(T.vac)chips.push(`<span class="mini-chip calm">Vacaciones</span>`);
+  else if(T.holiday)chips.push(`<span class="mini-chip calm">Festivo</span>`);
+  h+=`<div class="chiprow">${chips.join('')}</div>`;
+  // 3. Lo que pide una respuesta ahora (pequeño)
+  const overdue=state.config.commitments.find(c=>c.open&&!c.done&&c.date===P.today&&toMin(c.end)<=now&&now<toMin(c.end)+180);
+  if(overdue)h+=`<div class="alert warn compact"><b>¿Ya terminaste "${esc(overdue.label)}"?</b><div class="row"><button class="primary small" data-act="commit-done" data-id="${overdue.id}">Ya terminé</button><button class="small" data-act="commit-more" data-id="${overdue.id}">+30 min</button></div></div>`;
+  const J0=state.journal.days[P.today]||{};
+  const ping=(T.pings||[]).filter(p=>p.min<=now&&now<p.min+60).pop();
+  if(ping&&!((J0.pingDone||{})[ping.id]>=ping.min)&&!T.blocks.some(b=>b.type==='sleep'&&now>=b.start&&now<b.end)){
+    h+=`<div class="alert calm compact row" style="justify-content:space-between"><b>${ping.id==='water'?'Toma un vaso de agua':esc(ping.name)}</b><span class="row" style="gap:6px"><button class="small primary" data-act="ping-done" data-id="${ping.id}" data-min="${ping.min}">Listo</button><button class="small ghost" data-act="ping-skip" data-id="${ping.id}" data-min="${ping.min}">Ahora no</button></span></div>`;
   }
-
+  // 4. Lo que sigue
   if(next.length){
     h+=`<section class="card"><h3>Lo que sigue hoy</h3><div class="tl">${next.map(b=>blockRow(b,now)).join('')}</div>
       <button class="ghost small" data-act="go" data-tab="dia">Ver el día completo</button></section>`;
   }else{
     h+=`<section class="card"><h3>Mañana</h3><p class="muted">${esc(tomorrowLine(P))}</p></section>`;
   }
+  maybeAskSleep(P);
   return h;
+}
+function badges(){
+  const P=PLAN||plan();const out={};
+  const pend=state.tasks.items.filter(t=>!t.done);
+  if(pend.length){
+    const st=pend.map(t=>{const I=P.info[t.id]||{};const dd=daysBetween(P.today,t.dueDate);return I.status==='riesgo'||dd<=0?3:I.status==='ajustado'||t.waitingFor||dd<=1?2:1});
+    const lv=Math.max(...st);out.tareas={n:pend.length,c:['','ok','warn','risk'][lv]};
+  }
+  const S=state.config.settings,J=state.journal.days[P.today]||{};
+  const T=P.days[0];const now=P.nowMin;
+  if(T&&now>=T.wake&&!J.wokeAt&&!T.away)out.bien={n:'',c:'risk'};
+  if(state.finance){
+    const F=fin(),c=card(),today=P.today;let lv=0;
+    if(c&&c.minPay>0&&c.nextDue&&daysBetween(today,c.nextDue)<=3&&F.env.card<c.minPay)lv=3;
+    if(F.fixed.some(x=>!x.variable&&x.day&&!(F.fixedPaid[curMonth()]||{})[x.id]&&daysBetween(today,nextDue(x.day))<=2))lv=Math.max(lv,3);
+    if(!lv&&shortfalls().length)lv=2;
+    if(!lv&&F.wish.some(w=>Date.now()-w.at>=864e5))lv=1;
+    if(lv)out.plata={n:'',c:['','ok','warn','risk'][lv]};
+  }
+  return out;
+}
+function paintBadges(){
+  let B={};try{B=badges()}catch(e){}
+  document.querySelectorAll('nav.tabs a').forEach(a=>{
+    let b=a.querySelector('.badge');const v=B[a.dataset.tab];
+    if(!v){if(b)b.remove();return}
+    if(!b){b=document.createElement('span');b.className='badge';a.appendChild(b)}
+    b.className='badge b-'+v.c+(v.n===''?' dot':'');b.textContent=v.n===''?'':String(v.n);
+  });
 }
 function guessDir(T,now){
   const go=T.blocks.find(b=>b.type==='commute'&&b.title==='Ir a la U');
@@ -950,27 +998,29 @@ function vDia(){
 }
 
 function vTareas(){
-  const P=PLAN||plan();const S=state.config.settings;
+  const P=PLAN||plan();
   const items=state.tasks.items;
   const pend=items.filter(t=>!t.done).sort((a,b)=>(a.dueDate+a.dueTime).localeCompare(b.dueDate+b.dueTime));
   const done=items.filter(t=>t.done).sort((a,b)=>(b.doneAt||'').localeCompare(a.doneAt||''));
-  const def=addDays(P.today,7);
-  let h=`<section class="card"><h2>Nueva tarea</h2>
-  <form id="f-task" class="stack">
-    <label class="f">Qué tienes que hacer<input id="t-name" autocomplete="off" placeholder="Ej: Informe de laboratorio de Robótica"></label>
-    <div class="grid2">
-      <label class="f">Tipo<select id="t-cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
-      <label class="f">Entrega<input id="t-date" type="date" value="${def}"></label>
-      <label class="f">Hora<input id="t-time" type="time" value="23:59"></label>
-    </div>
-    <label class="f">¿Cuánto crees que te va a tomar? (horas)<input id="t-est" type="text" inputmode="decimal" value="2"></label>
-    <div class="row">${[0.5,1,2,3,5,8].map(v=>`<button type="button" class="chip" data-act="est" data-v="${v}">${v<1?'30 min':v+' h'}</button>`).join('')}</div>
-    <p class="danger" id="t-err" hidden></p><p class="muted" id="t-prev"></p>
-    <button class="primary" type="button" data-act="submit">Agregar y planear</button>
-  </form></section>`;
-  h+=`<section class="card"><h2>Pendientes</h2>${pend.length?pend.map(t=>taskItem(t,P)).join(''):'<p class="muted">Nada pendiente. Disfruta.</p>'}</section>`;
-  if(done.length)h+=`<section class="card"><button class="ghost" data-act="toggle-done">${UI.doneOpen?'Ocultar':'Ver'} terminadas (${done.length})</button>${UI.doneOpen?done.slice(0,30).map(t=>{const late=t.doneAt&&t.doneAt.slice(0,10)>t.dueDate;return `<div class="task"><div class="row" style="justify-content:space-between"><b>${esc(t.name)}</b><span class="pill ${late?'p-riesgo':'p-bien'}">${late?'Tarde':'A tiempo'}</span></div><span class="muted">Estimaste ${dur(t.estMin)} · tomó ${dur(t.actualMin||0)}${t.estMin?` (${((t.actualMin||0)/t.estMin).toFixed(1)}×)`:''}</span></div>`}).join(''):''}</section>`;
+  const risk=pend.filter(t=>(P.info[t.id]||{}).status==='riesgo');
+  let h='';
+  if(risk.length)h+=`<div class="alert compact"><b>${risk.length===1?'1 tarea no alcanza':risk.length+' tareas no alcanzan'} antes de la entrega</b><span class="muted">Ábrela para ver opciones. No te quito sueño para cubrirla.</span></div>`;
+  h+=`<section class="card"><div class="top"><h2>Pendientes</h2><button class="small primary" data-act="fab-do" data-v="task">+ Nueva</button></div>
+    ${pend.length?`<div class="tlist">${pend.map(t=>taskRow(t,P)).join('')}</div>`:'<p class="muted">Nada pendiente. Disfruta.</p>'}</section>`;
+  if(done.length)h+=`<section class="card"><button class="ghost" data-act="toggle-done">${UI.doneOpen?'Ocultar':'Ver'} terminadas (${done.length})</button>${UI.doneOpen?done.slice(0,30).map(t=>{const late=t.doneAt&&t.doneAt.slice(0,10)>t.dueDate;return `<div class="trow s-${late?'riesgo':'bien'}" style="cursor:default"><span class="tdot"></span><span class="tmain"><b>${esc(t.name)}</b><small>Estimaste ${dur(t.estMin)} · tomó ${dur(t.actualMin||0)}</small></span><span class="pill ${late?'p-riesgo':'p-bien'}">${late?'Tarde':'A tiempo'}</span></div>`}).join(''):''}</section>`;
   return h;
+}
+function taskRow(t,P){
+  const I=P.info[t.id]||{status:'bien',need:0};
+  const dd=daysBetween(P.today,t.dueDate);
+  const st=t.waitingFor?'espera':I.status==='riesgo'||dd<0?'riesgo':I.status==='ajustado'||dd<=1?'ajustado':I.status;
+  const lab={bien:'Va bien',ajustado:'Ajustada',riesgo:'No alcanza',casi:'¿Ya casi?',espera:'Esperando'}[st];
+  const open=UI.topen===t.id;
+  const active=state.tasks.active&&state.tasks.active.taskId===t.id;
+  return `<div class="tcard s-${st} ${open?'open':''}"><button class="trow" data-act="topen" data-id="${t.id}" aria-expanded="${open}">
+    <span class="tdot"></span><span class="tmain"><b>${esc(t.name)}</b><small>${relDay(t.dueDate,P.today)==='hoy'?'Entrega hoy':'Entrega '+relDay(t.dueDate,P.today)} · ${t.waitingFor?'esperando a '+esc(t.waitingFor):'faltan ~'+dur(I.need)}</small></span>
+    ${active?'<span class="pill p-bien">En curso</span>':`<span class="pill p-${st==='espera'?'ajustado':st}">${lab}</span>`}<span class="chev">${open?'▴':'▾'}</span></button>
+    ${open?taskItem(t,P):''}</div>`;
 }
 function taskItem(t,P){
   const I=P.info[t.id]||{status:'bien',need:0,short:0,f:1.5};
@@ -984,10 +1034,9 @@ function taskItem(t,P){
   if(UI.editTask===t.id){extra=taskEditForm(t)}
   if(UI.waiting===t.id){extra=`<form class="row" data-form="waiting" data-id="${t.id}"><label class="f">¿A quién esperas?<input id="wait-${t.id}" autocomplete="off" placeholder="Ej: mi compañera" value="${esc(t.waitingFor||'')}"></label><button class="primary" type="button" data-act="submit">Guardar</button></form>`}
   const active=state.tasks.active&&state.tasks.active.taskId===t.id;
-  return `<div class="task">
+  return `<div class="tdetail">
     ${t.waitingFor?`<div class="alert warn" style="padding:10px 12px"><b>Esperando a ${esc(t.waitingFor)}</b><span>Hoy no te pongo bloques de esto. Escríbele hoy para cuadrar; desde mañana lo vuelvo a planear.</span><div class="row"><button class="small primary" data-act="unwait" data-id="${t.id}">Ya podemos empezar</button></div></div>`:''}
-    <div class="row" style="justify-content:space-between;align-items:flex-start"><div class="stack" style="gap:2px;min-width:0"><b>${esc(t.name)}</b><span class="muted">${CATS[t.cat]||''} · entrega ${shortDate(t.dueDate)} ${t.dueTime} (${relDay(t.dueDate,P.today)})</span></div>
-    <div class="row" style="gap:6px">${t.example?'<span class="pill p-ej">Ejemplo</span>':''}<span class="pill p-${I.status}">${lab}</span></div></div>
+    <span class="muted">${CATS[t.cat]||''} · entrega ${shortDate(t.dueDate)} ${t.dueTime}${t.example?' · ejemplo':''}</span>
     <div class="bar"><i style="width:${pct}%"></i></div>
     <span class="muted">${dur(sp)} hechos · faltan ~${dur(I.need)} (tu estimado ${dur(t.estMin)} × ${I.f.toFixed(1)} de margen)</span>
     <span>${nx}</span>
@@ -1002,26 +1051,18 @@ function taskItem(t,P){
 }
 
 function vRegistro(){
-  const today=dkey(new Date());const k=addDays(today,-UI.regDay);
-  const J=state.journal.days[k]||{};
-  const S=state.config.settings;
-  const L=dayLayout(k,planCfg(state),state.journal.days,null);
-  const hrs=sleepMin(J);
-  let h=`<section class="card"><div class="top"><div class="row"><button class="small" data-act="reg-prev" aria-label="Día anterior">←</button><h2>${UI.regDay===0?'Hoy':longDate(k)}</h2>${UI.regDay>0?'<button class="small" data-act="reg-next" aria-label="Día siguiente">→</button>':''}</div></div>
-  <h3>La noche anterior</h3>
-  <div class="grid2">
-    <label class="f">Me acosté<input type="time" data-j="bedAt" value="${esc(J.bedAt||'')}"></label>
-    <label class="f">Me dormí más o menos<input type="time" data-j="sleptAt" value="${esc(J.sleptAt||'')}"></label>
-    <label class="f">Me levanté<input type="time" data-j="wokeAt" value="${esc(J.wokeAt||'')}"></label>
-  </div>
-  ${hrs?`<p>Dormiste <b>${dur(hrs)}</b>. ${hrs<420?'Menos de 7 h: hoy no te exijas de más.':'Buen descanso.'}${J.bedAt&&J.sleptAt?` Tardaste ${dur(gap(J.bedAt,J.sleptAt))} en dormirte.`:''}</p>`:'<p class="muted">Si no sabes a qué hora te dormiste, pon tu mejor cálculo. Con unas semanas veremos el patrón.</p>'}
-  <span class="label">¿Con cuánta energía te levantaste?</span>
-  <div class="row">${[1,2,3,4,5].map(v=>`<button class="chip ${J.energy===v?'sel':''}" data-act="energy" data-v="${v}">${['Sin nada','Poca','Normal','Bien','Con todo'][v-1]}</button>`).join('')}</div>
-  <span class="label">¿Qué te quitó sueño?</span>
-  <div class="row">${['Celular','Computador','TV','Tareas','Ansiedad','Nada'].map(v=>`<button class="chip ${(J.thief||[]).includes(v)?'sel':''}" data-act="thief" data-v="${v}">${v}</button>`).join('')}</div>
-  </section>
-  <section class="card"><h3>Hábitos</h3><div>${state.config.habits.map(x=>`<label class="check"><input type="checkbox" data-habit="${x.id}" ${(J.habits||{})[x.id]?'checked':''}> ${esc(x.name)}</label>`).join('')}</div></section>
-  <section class="card"><h3>Tu meta de sueño</h3><p class="muted">Pantallas fuera a las <span class="time">${S.screensOff}</span>, a la cama a las <span class="time">${S.bed}</span>, arriba a las <span class="time">${S.wakeWeekday}</span>: ${dur((1440-toMin(S.bed))+toMin(S.wakeWeekday))} en cama entre semana. Lo cambias en Ajustes.</p></section>`;
+  const today=dkey(new Date());const S=state.config.settings;
+  const J=state.journal.days[today]||{};const hrs=sleepMin(J);
+  const EN=['','Sin nada','Poca','Normal','Bien','Con todo'];
+  let h=`<section class="card"><div class="top"><h2>Tu noche</h2>${J.wokeAt?`<button class="small" data-act="sleep-open" data-k="${today}">Editar</button>`:''}</div>
+    ${J.wokeAt?`<div class="stats"><div class="stat"><span class="label">Dormiste</span><b>${dur(hrs)}</b></div><div class="stat"><span class="label">Energía</span><b style="font-size:1.15rem">${EN[J.energy]||'—'}</b></div><div class="stat"><span class="label">Te quitó sueño</span><b style="font-size:1.15rem">${esc((J.thief||[]).join(', ')||'—')}</b></div></div>
+      <p class="muted">${hrs<420?'Menos de 7 h: hoy no te exijas de más.':'Buen descanso.'}</p>`
+    :`<button class="primary big" data-act="sleep-open" data-k="${today}">Registrar mi noche · 10 segundos</button>`}</section>`;
+  const day=(k,lab)=>{const D=state.journal.days[k]||{};return `<div class="stack" style="gap:8px"><span class="label">${lab}</span><div class="habit-toggles">${state.config.habits.map(x=>{const on=(D.habits||{})[x.id];const cnt=x.id==='water'&&(D.count||{}).water;return `<button class="htog ${on?'on':''}" data-act="htoggle" data-k="${k}" data-v="${x.id}"><i>${on?'✓':''}</i>${esc(x.name)}${cnt?` <small>(${cnt} vasos)</small>`:''}</button>`}).join('')}</div></div>`};
+  h+=`<section class="card"><h2>Hábitos</h2>${day(today,'Hoy')}${day(addDays(today,-1),'Ayer')}</section>`;
+  const miss=[...Array(6)].map((_,i)=>addDays(today,-(i+1))).filter(k=>!(state.journal.days[k]||{}).wokeAt);
+  if(miss.length)h+=`<section class="card"><h3>Noches sin registrar</h3><div class="row">${miss.map(k=>`<button class="chip" data-act="sleep-open" data-k="${k}">${shortDate(k)}</button>`).join('')}</div></section>`;
+  h+=`<section class="card"><h3>Tu meta de sueño</h3><p class="muted">Pantallas fuera <span class="time">${S.screensOff}</span> · a la cama <span class="time">${S.bed}</span> · arriba <span class="time">${S.wakeWeekday}</span>. Lo cambias en Ajustes.</p></section>`;
   return h;
 }
 function gap(a,b){let d=toMin(b)-toMin(a);if(d<0)d+=1440;return d}
@@ -1066,8 +1107,13 @@ function vProgreso(){
     <div class="stats"><div class="stat"><span class="label">Ida a la U</span><b>${tStat('ida')}</b></div><div class="stat"><span class="label">Vuelta a casa</span><b>${tStat('vuelta')}</b></div><div class="stat"><span class="label">Medidos</span><b>${trips.length}</b></div></div>
     ${trips.length?`<div class="stack" style="gap:4px">${trips.slice(-6).reverse().map(t=>`<span class="muted">${shortDate(dkey(new Date(t.leftAt)))} ${fmt(new Date(t.leftAt).getHours()*60+new Date(t.leftAt).getMinutes())} · ${t.dir==='ida'?'ida':'vuelta'} · <span class="time">${t.min} min</span></span>`).join('')}</div>`:''}
     <p class="muted">Con 3 trayectos (o 2 del mismo día de la semana) uso tu tiempo real en vez de los ${S.commuteMin} min.</p></section>`;
-  h+=`<section class="card"><h2>Hábitos</h2><div class="scroll"><div class="hgrid"><span></span>${ks.map(k=>`<span class="muted" style="text-align:center;font-size:.7rem">${parseKey(k).getDate()}</span>`).join('')}
-    ${state.config.habits.map(x=>`<span>${esc(x.name)}</span>${ks.map(k=>`<i class="${((D[k]||{}).habits||{})[x.id]?'y':''}" title="${shortDate(k)}"></i>`).join('')}`).join('')}</div></div></section>`;
+  {const last30=[...Array(30)].map((_,j)=>addDays(today,j-29));const last7=last30.slice(-7);
+   const row=x=>{const has=k=>!!(((D[k]||{}).habits||{})[x.id]);let streak=0;for(let j=last30.length-1;j>=0;j--){const k=last30[j];if(has(k))streak++;else if(k===today)continue;else break}
+     const m=last30.filter(has).length;
+     return `<div class="hab"><div class="hab-top"><b>${esc(x.name)}</b><span class="muted">${streak?`🔥 ${streak} ${streak===1?'día':'días'}`:'Sin racha'}</span></div>
+       <div class="hab-week">${last7.map(k=>`<span class="hd ${has(k)?'on':''} ${k===today?'today':''}" title="${shortDate(k)}"><i></i><small>${DS[parseKey(k).getDay()].charAt(0).toUpperCase()}</small></span>`).join('')}</div>
+       <div class="row" style="gap:10px"><div class="bar" style="flex:1"><i style="width:${m/30*100}%"></i></div><span class="mono muted" style="font-size:.8rem">${m}/30 días</span></div></div>`};
+   h+=`<section class="card"><h2>Hábitos</h2><p class="muted">Últimos 7 días y cuántos de los últimos 30 cumpliste.</p><div class="stack" style="gap:16px">${state.config.habits.map(row).join('')}</div></section>`;}
   const cats=Object.keys(CATS).map(c=>({c,...factorFor(c,state.tasks.items,S)})).filter(x=>x.n>0);
   h+=`<section class="card"><h2>Cómo calculas tus tiempos</h2>
     <div class="stats"><div class="stat"><span class="label">Terminadas</span><b>${doneT.length}</b></div><div class="stat"><span class="label">A tiempo</span><b>${doneT.length?Math.round(onTime/doneT.length*100)+'%':'—'}</b></div></div>
@@ -1106,9 +1152,56 @@ function openCommitSheet(){
   UI.sheet={label:'',mode:'now',durMin:60};renderSheet();
 }
 function estLine(label){const e=estFor(label);return e.n?`Reservo ${dur(e.min)}: lo que te ha tomado "${esc(label)}" antes, con un poco de margen.`:`Reservo ${dur(e.min)} y lo ajusto cuando toques "Ya terminé". La próxima vez sabré mejor.`}
+function sheetWrap(title,body){return `<div class="sheet-bg" data-act="close-sheet-bg"><div class="sheet" role="dialog" aria-label="${esc(title)}"><div class="sheet-head"><h2>${esc(title)}</h2><button class="small ghost" data-act="close-sheet">Cerrar</button></div>${body}</div></div>`}
+function taskFormHTML(){
+  const def=addDays(dkey(new Date()),7);
+  return `<form id="f-task" class="stack">
+    <label class="f">Qué tienes que hacer<input id="t-name" autocomplete="off" placeholder="Ej: Informe de laboratorio de Robótica"></label>
+    <div class="grid2"><label class="f">Tipo<select id="t-cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+      <label class="f">Entrega<input id="t-date" type="date" value="${def}"></label><label class="f">Hora<input id="t-time" type="time" value="23:59"></label></div>
+    <label class="f">¿Cuánto crees que te toma? (horas)<input id="t-est" type="text" inputmode="decimal" value="2"></label>
+    <div class="row">${[0.5,1,2,3,5,8].map(v=>`<button type="button" class="chip" data-act="est" data-v="${v}">${v<1?'30 min':v+' h'}</button>`).join('')}</div>
+    <p class="danger" id="t-err" hidden></p><p class="muted" id="t-prev"></p>
+    <button class="primary" type="button" data-act="submit">Agregar y planear</button></form>`;
+}
+function openTaskSheet(){UI.sheet={kind:'task'};renderSheet();setTimeout(()=>{const n=document.getElementById('t-name');if(n)n.focus()},80)}
+function sleepDefaults(k){
+  const S=state.config.settings;const L=dayLayout(k,planCfg(state),state.journal.days,null);
+  const bed=toMin(S.bed);return {bedAt:fmt(bed),sleptAt:fmt(bed+15),wokeAt:fmt(L.wake)};
+}
+function openSleepSheet(k){
+  k=k||dkey(new Date());const J=state.journal.days[k]||{};const y=state.journal.days[addDays(k,-1)]||{};const d=sleepDefaults(k);
+  UI.sheet={kind:'sleep',k,bedAt:J.bedAt||d.bedAt,sleptAt:J.sleptAt||d.sleptAt,wokeAt:J.wokeAt||d.wokeAt,energy:J.energy||null,thief:(J.thief||[]).slice(),yh:Object.assign({},y.habits||{})};
+  renderSheet();
+}
+function sleepSheetHTML(){
+  const s=UI.sheet;const k=s.k;const yk=addDays(k,-1);
+  const hrs=gap(s.sleptAt||s.bedAt,s.wokeAt);
+  return `<form id="f-sleep" class="stack">
+    <p class="muted">Ya puse lo de tu plan. Solo cambia lo que fue distinto.</p>
+    <div class="grid3"><label class="f">Me acosté<input id="ss-bed" type="time" value="${s.bedAt}"></label><label class="f">Me dormí<input id="ss-slept" type="time" value="${s.sleptAt}"></label><label class="f">Me levanté<input id="ss-woke" type="time" value="${s.wokeAt}"></label></div>
+    <p>Eso es <b>${dur(hrs)}</b> de sueño.</p>
+    <span class="label">¿Cómo te levantaste?</span>
+    <div class="row">${[1,2,3,4,5].map(v=>`<button type="button" class="chip ${s.energy===v?'sel':''}" data-act="ss-energy" data-v="${v}">${['Sin nada','Poca','Normal','Bien','Con todo'][v-1]}</button>`).join('')}</div>
+    <span class="label">¿Qué te quitó sueño?</span>
+    <div class="row">${['Celular','Computador','TV','Tareas','Ansiedad','Nada'].map(v=>`<button type="button" class="chip ${s.thief.includes(v)?'sel':''}" data-act="ss-thief" data-v="${v}">${v}</button>`).join('')}</div>
+    <span class="label">Ayer (${shortDate(yk)}), ¿cumpliste?</span>
+    <div class="habit-toggles">${state.config.habits.map(x=>`<button type="button" class="htog ${s.yh[x.id]?'on':''}" data-act="ss-habit" data-v="${x.id}"><i>${s.yh[x.id]?'✓':''}</i>${esc(x.name)}</button>`).join('')}</div>
+    <button class="primary" type="button" data-act="submit">Guardar</button></form>`;
+}
+function readSleepInputs(){const s=UI.sheet;if(!s||s.kind!=='sleep')return;const g=id=>{const e=document.getElementById(id);return e&&e.value};s.bedAt=g('ss-bed')||s.bedAt;s.sleptAt=g('ss-slept')||s.sleptAt;s.wokeAt=g('ss-woke')||s.wokeAt}
+function maybeAskSleep(P){
+  const T=P.days[0];const k=P.today;if(UI.sheet||!T||T.away)return;
+  const J=state.journal.days[k]||{};if(J.wokeAt)return;
+  if(P.nowMin<T.wake||P.nowMin>14*60)return;
+  if(lsGet('asked.sleep')===k)return;
+  lsSet('asked.sleep',k);setTimeout(()=>{if(!UI.sheet&&!UI.auth)openSleepSheet(k)},700);
+}
 function renderSheet(){
   const el=document.getElementById('sheet');
   if(!UI.sheet){el.hidden=true;el.innerHTML='';return}
+  if(UI.sheet.kind==='task'){el.hidden=false;el.innerHTML=sheetWrap('Nueva tarea',taskFormHTML());updatePreview();return}
+  if(UI.sheet.kind==='sleep'){el.hidden=false;el.innerHTML=sheetWrap(UI.sheet.k===dkey(new Date())?'¿Cómo dormiste?':'Tu noche del '+shortDate(UI.sheet.k),sleepSheetHTML());return}
   const s=UI.sheet;const today=dkey(new Date());const n=new Date();const nm=Math.floor((n.getHours()*60+n.getMinutes())/5)*5;
   el.hidden=false;
   el.innerHTML=`<div class="sheet-bg" data-act="close-sheet-bg"><div class="sheet" role="dialog" aria-label="Agregar compromiso">
@@ -1380,7 +1473,7 @@ function monthCard(M){
   const E=expectedIncome();const tot=fp+(c?c.minPay:0);
   let h=`<section class="card"><div class="top"><h2>${cap1(MN[new Date().getMonth()])}</h2><span class="muted">Te entró <b>${money(M.inc)}</b> de ~${money(E)}</span></div>`;
   {const O=obligations();const need=O.fixed+O.card;const remE=Math.max(0,E-M.inc);
-   if(need>0)h+=need>remE&&remE>0?`<div class="alert warn" style="padding:12px 14px"><b>Este mes no alcanza para todo</b><span>Te faltan por cubrir ${money(need)} (pagos fijos y la parte de la tarjeta de este mes) y esperas que te entren ~${money(remE)} más. Faltarían ${money(need-remE)}. Mira si puedes bajar gastos de la U o adelantar ingresos.</span></div>`:remE>0?`<p class="muted">De cada ingreso aparto el ${Math.min(100,Math.round(need/remE*100))}% para cubrir lo que falta del mes (${money(need)}).</p>`:''}
+   if(need>0)h+=need>remE&&remE>0?`<p class="warnline">⚠ Este mes faltarían <b>${money(need-remE)}</b>: te quedan ${money(need)} por cubrir y esperas ~${money(remE)} más.</p>`:remE>0?`<p class="muted">De cada ingreso aparto el ${Math.min(100,Math.round(need/remE*100))}% para cubrir lo que falta del mes (${money(need)}).</p>`:''}
   if(fp>0||F.env.fixed>0)h+=env('Apartado para obligaciones',Math.min(F.env.fixed,fp),fp,fp<=F.env.fixed?'Cubiertas: ya tienes lo de tus pagos fijos.':`Faltan ${money(N.fixed)} por apartar.`);
   if(c&&c.minPay>0)h+=env(`Apartado para la tarjeta (${niceDate(c.nextDue)})`,Math.min(F.env.card,c.minPay),c.minPay,N.card<=0?'Cubierta: ya tienes lo del próximo pago.':`Faltan ${money(N.card)} · ${relDay(c.nextDue,dkey(new Date()))}.`)+`<button class="small" style="align-self:flex-start" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar tarjeta</button>`;
   h+=`<div class="stack" style="gap:6px"><div class="row" style="justify-content:space-between"><b>Gastos del día a día</b><span class="mono">${money(M.needsSpent)} / ${money(M.needsBud)}</span></div>${finBar(M.needsSpent,M.needsBud)}
@@ -1471,7 +1564,7 @@ function splitCard(){
 function vPlata(){
   const F=fin(),today=dkey(new Date()),M=monthState();
   const sub=UI.sub.plata||'resumen';
-  let h=seg('plata',sub,[['resumen','Resumen'],['registrar','Registrar'],['deudas','Deudas'],['ahorro','Ahorro'],['presupuesto','Presupuesto']]);
+  let h=seg('plata',sub,[['resumen','Resumen'],['registrar','Anotar'],['deudas','Deudas'],['ahorro','Ahorro'],['presupuesto','Plan']]);
   // alertas siempre visibles
   const dueSoon=F.debts.filter(d=>d.balance>0&&(d.kind==='card'?d.nextDue&&daysBetween(today,d.nextDue)<=5:d.dueDay&&daysBetween(today,nextDue(d.dueDay))<=5));
   const fixSoon=F.fixed.filter(x=>!x.variable&&x.day&&!(F.fixedPaid[curMonth()]||{})[x.id]&&daysBetween(today,nextDue(x.day))<=3);
@@ -1490,7 +1583,6 @@ function vPlata(){
   }
 
   if(sub==='resumen'){
-    h+=`<div class="quick"><button data-act="fin-go" data-t="in"><i class="qi">${ICON.coinIn}</i>Me entró plata<span>Y la reparto</span></button><button data-act="fin-go" data-t="out"><i class="qi">${ICON.coinOut}</i>Gasté<span>Obligatorio o mío</span></button><button data-act="fin-go" data-t="buy"><i class="qi">${ICON.bag}</i>¿Me lo compro?<span>¿Me descuadra?</span></button></div>`;
     h+=monthCard(M);
     if(F.fixed.length)h+=`<section class="card"><h3>Pagos fijos de ${MN[new Date().getMonth()]}</h3>${fixedList(true)}</section>`;
     h+=catChart(M);
@@ -1722,7 +1814,7 @@ function render(){
   const v={ahora:vAhora,dia:vDia,tareas:vTareas,bien:vBien,plata:vPlata,ajustes:vAjustes}[tab]();
   document.querySelector('.gear').classList.toggle('sel',tab==='ajustes');
   document.getElementById('view').innerHTML=v;
-  tick();updatePreview();
+  tick();updatePreview();paintBadges();
 }
 function softRender(){
   const a=document.activeElement;
@@ -1789,10 +1881,14 @@ document.addEventListener('click',e=>{
         <button data-act="fab-do" data-v="commit"><i>${ICON.bolt}</i>Me salió algo</button>
         <button data-act="fab-do" data-v="out"><i>${ICON.coinOut}</i>Gasté</button>
         <button data-act="fab-do" data-v="in"><i>${ICON.coinIn}</i>Me entró plata</button>
+        <button data-act="fab-do" data-v="buy"><i>${ICON.bag}</i>¿Me lo compro?</button>
+        <button data-act="fab-do" data-v="sleep"><i>${ICON.bed}</i>Mi noche</button>
         <button data-act="fab-do" data-v="water"><i>${ICON.meal}</i>Tomé agua</button></div></div>`;break}
     case 'fab-close':if(e.target===el){document.getElementById('fabmenu').hidden=true;document.getElementById('fab').classList.remove('open')}break;
     case 'fab-do':{document.getElementById('fabmenu').hidden=true;document.getElementById('fab').classList.remove('open');const v=el.dataset.v;
-      if(v==='task'){location.hash='tareas';setTimeout(()=>{const n=document.getElementById('t-name');if(n)n.focus()},60)}
+      if(v==='task')openTaskSheet();
+      else if(v==='buy'){UI.sub.plata='registrar';UI.finType='buy';if(location.hash==='#plata')render();else location.hash='plata';setTimeout(()=>{const a=document.getElementById('b-name');if(a)a.focus()},60)}
+      else if(v==='sleep')openSleepSheet();
       else if(v==='commit')openCommitSheet();
       else if(v==='in'||v==='out'){UI.sub.plata='registrar';UI.finType=v;if(location.hash==='#plata')render();else location.hash='plata';setTimeout(()=>{const a=document.getElementById('fin-amt');if(a)a.focus()},60)}
       else if(v==='water'){const k=dkey(new Date());const J=state.journal.days[k]=state.journal.days[k]||{};J.count=J.count||{};J.count.water=(J.count.water||0)+1;J.habits=J.habits||{};J.habits.water=true;J.pingDone=J.pingDone||{};J.pingDone.water=new Date().getHours()*60+new Date().getMinutes();save('journal');render();toast(`Van ${J.count.water} vasos hoy.`)}
@@ -1835,6 +1931,12 @@ document.addEventListener('click',e=>{
     case 'edit-commit':UI.editCommit=UI.editCommit===id?null:id;render();break;
     case 'edit-commit-go':UI.editCommit=id;if(location.hash!=='#dia'){location.hash='dia'}else render();setTimeout(()=>{const f=document.querySelector('[data-form="edit-commit"]');if(f)f.scrollIntoView({block:'center'})},80);break;
     case 'edit-task':UI.editTask=UI.editTask===id?null:id;UI.adjusting=null;UI.finishing=null;UI.waiting=null;render();break;
+    case 'ss-energy':readSleepInputs();UI.sheet.energy=UI.sheet.energy===+el.dataset.v?null:+el.dataset.v;renderSheet();break;
+    case 'ss-thief':{readSleepInputs();const v=el.dataset.v;let t=UI.sheet.thief;t=t.includes(v)?t.filter(x=>x!==v):(v==='Nada'?['Nada']:[...t.filter(x=>x!=='Nada'),v]);UI.sheet.thief=t;renderSheet();break}
+    case 'ss-habit':readSleepInputs();UI.sheet.yh[el.dataset.v]=!UI.sheet.yh[el.dataset.v];renderSheet();break;
+    case 'sleep-open':openSleepSheet(el.dataset.k);break;
+    case 'htoggle':{const k=el.dataset.k;const J=state.journal.days[k]=state.journal.days[k]||{};J.habits=J.habits||{};J.habits[el.dataset.v]=!J.habits[el.dataset.v];save('journal');render();break}
+    case 'topen':UI.topen=UI.topen===id?null:id;render();break;
     case 'del-commit':state.config.commitments=state.config.commitments.filter(c=>c.id!==id);save('config');render();toast('Compromiso quitado. Recalculé.');break;
     case 'reg-prev':UI.regDay++;render();break;
     case 'reg-next':UI.regDay=Math.max(0,UI.regDay-1);render();break;
@@ -1868,7 +1970,7 @@ function handleForm(f){
     const msg=!name?'Escribe qué tienes que hacer.':!/^\d{4}-\d{2}-\d{2}$/.test(dueDate)?'Elige la fecha de entrega.':!(est>0)?'Escribe cuántas horas crees que te toma (por ejemplo 1,5).':'';
     if(msg){err.textContent=msg;err.hidden=false;return}
     const t={id:uid(),name,cat:document.getElementById('t-cat').value,dueDate,dueTime:document.getElementById('t-time').value||'23:59',estMin:Math.max(15,Math.round(est*60)),created:new Date().toISOString(),sessions:[]};
-    state.tasks.items.push(t);save('tasks');render();
+    state.tasks.items.push(t);save('tasks');if(UI.sheet&&UI.sheet.kind==='task'){UI.sheet=null;renderSheet()}render();
     const I=PLAN.info[t.id];
     toast(I&&I.next?`Agregada. Empiezas ${relDay(I.next.k,PLAN.today)} a las ${fmt(I.next.start)}.`:'Agregada, pero no alcanza el tiempo. Mira la tarea.');
   }else if(f.id==='f-commit'){
@@ -1891,6 +1993,11 @@ function handleForm(f){
   }else if(f.dataset.form==='finish'){
     const id=f.dataset.id;const t=state.tasks.items.find(x=>x.id===id);const h=num(document.getElementById('fin-'+id).value)||0;
     markDone(t,h*60);UI.finishing=null;save('tasks');render();toast(t.example?'Tarea de ejemplo terminada.':'Anotado. Con esto ajusto tus próximos cálculos.');
+  }else if(f.id==='f-sleep'){
+    readSleepInputs();const s=UI.sheet;const J=state.journal.days[s.k]=state.journal.days[s.k]||{};
+    Object.assign(J,{bedAt:s.bedAt,sleptAt:s.sleptAt,wokeAt:s.wokeAt,energy:s.energy,thief:s.thief});
+    const yk=addDays(s.k,-1);const Y=state.journal.days[yk]=state.journal.days[yk]||{};Y.habits=Object.assign({},Y.habits||{},s.yh);
+    UI.sheet=null;renderSheet();save('journal');render();toast(`Anotado: dormiste ${dur(gap(J.sleptAt||J.bedAt,J.wokeAt))}.`);
   }else if(f.dataset.form==='edit-commit'){
     const c=state.config.commitments.find(x=>x.id===f.dataset.id);if(!c)return;
     const g=id=>{const e=document.getElementById(id);return e?e.value:''};
