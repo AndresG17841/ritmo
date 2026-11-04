@@ -341,6 +341,38 @@ nav.tabs a{position:relative}
 .hd.on i{background:var(--grad)}
 .hd.today i{outline:2px solid var(--accent);outline-offset:2px}
 .hd small{font-size:.7rem;color:var(--muted)}
+/* Finanzas simples */
+.hero-money{background:var(--grad);color:#fff;border-radius:26px;padding:20px 22px;display:flex;flex-direction:column;gap:6px;box-shadow:0 14px 34px rgba(91,79,224,.25)}
+.hero-money .label{color:rgba(255,255,255,.8)}.hero-money .big{font-family:var(--display);font-size:2.4rem;font-weight:700;line-height:1.05;font-variant-numeric:tabular-nums}
+.hm-row{display:flex;gap:18px;flex-wrap:wrap;margin-top:6px;font-family:var(--display);font-weight:600}
+.hm-row span{display:flex;flex-direction:column}.hm-row small{font-family:var(--body);font-weight:400;font-size:.75rem;color:rgba(255,255,255,.75)}.hm-row em{font-style:normal;font-weight:400;font-size:.8rem;color:rgba(255,255,255,.75)}
+.plist{display:flex;flex-direction:column}
+.prow{display:flex;align-items:center;gap:10px;padding:10px 0;border-top:1px solid var(--line)}.prow:first-child{border-top:0}
+.prow.done .pmain b,.prow.done .pamt{opacity:.55}
+.pdot{width:10px;height:10px;border-radius:50%;background:var(--warm);flex:0 0 auto}.pdot.ok{background:var(--ok)}.pdot.risk{background:var(--risk)}
+.pmain{display:flex;flex-direction:column;gap:2px;flex:1;min-width:0}.pmain small{color:var(--muted);font-size:.8rem}
+.pamt{font-family:var(--mono);font-variant-numeric:tabular-nums;font-size:.92rem;white-space:nowrap}.pamt.pos{color:var(--ok)}
+.thin{display:block;height:5px;border-radius:99px;background:var(--line);overflow:hidden;margin-top:3px}.thin i{display:block;height:100%;background:var(--grad);border-radius:99px}
+.prow .small{min-height:34px;padding:6px 12px}
+.icon{min-width:34px;padding:4px 8px!important}
+.mrow{display:flex;flex-direction:column;gap:6px}
+.mrow small{font-weight:400}
+.typegrid{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.tg{display:flex;flex-direction:column;align-items:center;gap:6px;background:transparent;box-shadow:none;padding:4px 0;font-size:.78rem;font-weight:600;color:var(--muted)}
+.tg i{width:50px;height:50px;border-radius:17px;background:var(--surface);box-shadow:var(--shadow-sm);display:flex;align-items:center;justify-content:center;color:var(--accent)}
+.tg i svg{width:24px;height:24px;stroke:currentColor;fill:none;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.tg.sel{color:var(--ink)}.tg.sel i{background:var(--grad);color:#fff}
+.amt{font-family:var(--display);font-size:2rem;font-weight:600;text-align:center;min-height:64px}
+.chip.small{min-height:32px;padding:4px 10px;font-size:.85rem}
+details.more summary{cursor:pointer;color:var(--accent);font-weight:600;padding:6px 0;list-style:none}details.more summary::-webkit-details-marker{display:none}
+details.more[open] summary{margin-bottom:8px}
+.gcard{border-top:1px solid var(--line)}.gcard:first-child{border-top:0}
+.grow{display:flex;align-items:center;gap:10px;width:100%;background:transparent;box-shadow:none;padding:12px 0;text-align:left;font-weight:400}
+.grow:hover{box-shadow:none}
+.pri{font-size:.68rem;font-weight:700;padding:2px 7px;border-radius:99px;vertical-align:middle}
+.pri-alta{background:var(--risk-soft);color:var(--risk)}.pri-media{background:var(--class-soft);color:var(--class)}.pri-baja{background:var(--sunk);color:var(--muted)}.pri-sobra{background:var(--ok-soft);color:var(--ok)}
+.split4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.split4 input{text-align:center}
+.center{text-align:center}
 /* Gráfica de sueño en curva */
 .wave text{font-family:var(--body);font-size:11px;fill:var(--muted)}
 .wave .today{fill:var(--ink);font-weight:700}
@@ -1413,13 +1445,13 @@ function payCard(){
   const avail={own:ownBank(),save:goals.reduce((a,g)=>a+g.saved,0),needs:Math.max(0,monthState().needsLeft)};
   const lab={own:'De lo mío',save:'De mis ahorros',needs:'Del día a día'};
   return `<section class="now t-task"><span class="kind">Pagar</span><h2>${esc(T.name)}</h2>
-    <form id="f-pay" class="stack"><div class="grid2"><label class="f">Cuánto pagaste<input id="p-amt" inputmode="numeric" value="${amt}"></label></div></form>
+    <form id="f-pay" class="stack"><input id="p-amt" class="amt" inputmode="numeric" value="${amt}" aria-label="Cuánto pagaste"></form>
     <div class="stack" style="gap:4px">
-      ${fromEnv>0?`<p><b>${money(fromEnv)}</b> salen de lo que tenías apartado.</p>`:''}
-      ${rest>0?`<p><b>${money(rest)}</b> ${fromEnv>0?'faltan. ¿De dónde salen?':'¿De dónde salen?'}</p>
+      ${fromEnv>0?`<p><b>${money(fromEnv)}</b> de lo apartado</p>`:''}
+      ${rest>0?`<p><b>${money(rest)}</b> ${fromEnv>0?'más, ¿de dónde?':'¿de dónde?'}</p>
         <div class="row">${['own','save','needs'].map(k=>`<button type="button" class="chip ${src===k?'sel':''}" data-act="pay-src" data-v="${k}">${lab[k]} <span class="muted">(${money(avail[k])})</span></button>`).join('')}</div>
         ${src==='save'&&goals.length>1?`<label class="f">De qué meta<select id="p-goal">${goals.map(g=>`<option value="${g.id}" ${P.goal===g.id?'selected':''}>${esc(g.name)} (${money(g.saved)})</option>`).join('')}</select></label>`:''}
-        ${avail[src]<rest?`<p class="danger">${lab[src]} solo tienes ${money(Math.max(0,avail[src]))}. Igual lo anoto, pero ${src==='own'?'tu acumulado para ti quedará en negativo':src==='save'?'no alcanza con el ahorro':'te pasarás del día a día'}.</p>`:''}`:'<p class="muted">Lo cubres completo con lo apartado.</p>'}
+        ${avail[src]<rest?`<small class="danger">No alcanza: solo hay ${money(Math.max(0,avail[src]))}.</small>`:''}`:'<small class="muted">Cubierto con lo apartado.</small>'}
     </div>
     <div class="row"><button class="primary" data-act="pay-go">Confirmar pago</button><button data-act="pay-cancel">Cancelar</button></div></section>`;
 }
@@ -1444,135 +1476,123 @@ function doPay(){
 function splitCard(){
   const a=UI.split.amount;const P=UI.split.plan||splitPlan(a);const al=allocSave(P.save);const c=card();
   const line=(v,t)=>v>0?`<p><b>${money(v)}</b> ${t}</p>`:'';
-  return `<section class="now t-free"><span class="kind">Te entraron ${money(a)}</span><h2>Repártelo hoy, antes de gastarlo</h2>
+  return `<section class="now t-free"><span class="kind">Te entraron ${money(a)}</span><h2>Así se reparte</h2>
     <div class="stack" style="gap:6px">
-    ${line(P.fixed,'apartados para tus pagos fijos')}
-    ${line(P.card,`apartados para la tarjeta (pagas ${c?money(c.minPay):''} el ${c&&c.nextDue?niceDate(c.nextDue):''})`)}
+    ${line(P.fixed,'pagos fijos')}
+    ${line(P.card,'tarjeta')}
     ${line(P.debt,`para la deuda <b>${esc(P.targetName)}</b>${P.prio?' (va primero: recibe lo de deudas y lo de ahorro)':''}`)}
     ${P.save>0?`<p><b>${money(P.save)}</b> para ahorrar${al.length?': '+al.map(x=>`${money(x.a)} a ${esc(x.g.name)}`).join(', '):''}</p>`:''}
-    ${line(P.needs,'para el día a día (comida, transporte…)')}
-    ${line(P.own,'para ti, sin culpa')}</div>
-    <p class="muted">${P.pct>0?`El ${P.pct}% va a obligaciones: es lo que necesitas de cada ingreso para cubrir el mes, contando con que te entren ~${money(P.E)}. `:''}Lo que queda se reparte con tus porcentajes.${P.pct>=100?' Esta vez todo se fue a obligaciones porque lo que falta del mes es más de lo que esperas que te entre.':''}</p>
+    ${line(P.needs,'día a día')}
+    ${line(P.own,'para ti')}</div>
+    ${P.pct>0?`<small class="muted">${P.pct}% a obligaciones, el resto con tus porcentajes.</small>`:''}
     <div class="row"><button class="primary" data-act="fin-apply">Ya lo separé</button><button data-act="fin-split-close">Ahora no</button></div></section>`;
 }
 function vPlata(){
-  const F=fin(),today=dkey(new Date()),M=monthState();
-  const sub=UI.sub.plata||'resumen';
-  let h=seg('plata',sub,[['resumen','Resumen'],['registrar','Anotar'],['deudas','Deudas'],['ahorro','Ahorro'],['presupuesto','Plan']]);
-  // alertas siempre visibles
-  const dueSoon=F.debts.filter(d=>d.balance>0&&(d.kind==='card'?d.nextDue&&daysBetween(today,d.nextDue)<=5:d.dueDay&&daysBetween(today,nextDue(d.dueDay))<=5));
-  const fixSoon=F.fixed.filter(x=>!x.variable&&x.day&&!(F.fixedPaid[curMonth()]||{})[x.id]&&daysBetween(today,nextDue(x.day))<=3);
-  if(dueSoon.length||fixSoon.length)h+=`<div class="alert warn"><b>Pagos que se acercan</b>${dueSoon.map(d=>`<span>${esc(d.name)}: ${relDay(d.kind==='card'?d.nextDue:nextDue(d.dueDay),today)}${d.minPay?' · '+money(d.minPay):''}</span>`).join('')}${fixSoon.map(x=>`<span>${esc(x.name)}: ${relDay(nextDue(x.day),today)} · ${money(x.amount)}</span>`).join('')}</div>`;
-  const ripe=F.wish.filter(w=>Date.now()-w.at>=864e5);
-  if(ripe.length)h+=`<div class="alert calm"><b>Ya pasaron 24 horas</b>${ripe.map(w=>`<div class="row" style="justify-content:space-between"><span>¿Todavía quieres ${esc(w.name||'esto')} (${money(w.price)})?</span><span class="row" style="gap:6px"><button class="small" data-act="wish-buy" data-id="${w.id}">Lo compré</button><button class="small ghost" data-act="wish-drop" data-id="${w.id}">Ya no</button></span></div>`).join('')}</div>`;
+  const F=fin(),today=dkey(new Date()),M=monthState(),c=card();
+  let sub=UI.sub.plata||'resumen';if(sub==='deudas')sub='resumen';
+  let h=seg('plata',sub,[['resumen','Resumen'],['registrar','Anotar'],['ahorro','Metas'],['presupuesto','Ajustes']]);
+  // Solo lo que pide acción
   if(UI.pay)h+=payCard();
   if(UI.split)h+=splitCard();
   for(const sf of shortfalls()){
     const sv=monthState().saved;
-    h+=`<div class="alert"><b>Vas corto por ${money(sf.short)} para ${sf.label}</b>
-      <span>Opciones, en este orden:</span>
-      ${sv>0?`<span>1. Usar lo que ahorraste este mes (${money(sv)}).</span>`:''}
-      <span>${sv>0?'2':'1'}. Pedirle prestado a tu novia. Queda como deuda que va primero: lo de deudas y lo de ahorro se van a pagarla hasta saldarla.</span>
-      <div class="row">${sv>0?`<button class="small" data-act="short-save" data-w="${sf.what}" data-v="${sf.short}">Usar ${money(Math.min(sv,sf.short))} del ahorro</button>`:''}<button class="small primary" data-act="short-borrow" data-w="${sf.what}" data-v="${sf.short}">Le pedí ${money(sf.short)} a mi novia</button></div></div>`;
+    h+=`<div class="alert compact"><b>Vas corto ${money(sf.short)} para ${sf.label}</b>
+      <div class="row">${sv>0?`<button class="small" data-act="short-save" data-w="${sf.what}" data-v="${sf.short}">Usar ahorro (${money(Math.min(sv,sf.short))})</button>`:''}<button class="small primary" data-act="short-borrow" data-w="${sf.what}" data-v="${sf.short}">Le pedí a mi novia</button></div></div>`;
   }
+  const ripe=F.wish.filter(w=>Date.now()-w.at>=864e5);
+  for(const w of ripe)h+=`<div class="alert calm compact row" style="justify-content:space-between"><b>¿Aún quieres ${esc(w.name||'esto')}? <span class="muted">${money(w.price)}</span></b><span class="row" style="gap:6px"><button class="small" data-act="wish-buy" data-id="${w.id}">Lo compré</button><button class="small ghost" data-act="wish-drop" data-id="${w.id}">Ya no</button></span></div>`;
 
   if(sub==='resumen'){
-    h+=monthCard(M);
-    if(F.fixed.length)h+=`<section class="card"><h3>Pagos fijos de ${MN[new Date().getMonth()]}</h3>${fixedList(true)}</section>`;
-    h+=catChart(M);
-    if(F.debts.length)h+=debtIndicator();
-    if(F.goals.length)h+=`<section class="card"><h3>Ahorro</h3><div class="stack" style="gap:10px">${goalsSorted().map(g=>{const i=goalInfo(g);return `<div class="stack" style="gap:4px"><div class="row" style="justify-content:space-between"><span><b>${esc(g.name)}</b> <span class="pill p-${g.prio==='alta'?'riesgo':g.prio==='media'?'casi':'ej'}">${(PRIO[g.prio]||PRIO.media).l}</span></span><span class="mono">${money(g.saved)} / ${money(g.target)}</span></div>${finBar(g.saved,g.target).replace('var(--risk)','var(--ok)')}</div>`}).join('')}</div></section>`;
-    const recent=F.moves.slice().sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id)).slice(0,10);
-    const L={in:'Entró',out:'Gasto',debt:'Pago deuda',save:'Ahorro',loan:'Préstamo',use:'Sacado'};
-    if(recent.length)h+=`<section class="card"><h3>Últimos movimientos</h3>${recent.map(x=>`<div class="row" style="justify-content:space-between;border-top:1px solid var(--line);padding-top:8px"><span style="min-width:0"><b>${x.type==='out'?(moveKind(x)==='own'?'Para mí':'Obligatorio'):L[x.type]}</b> <span class="muted">${shortDate(x.date)}${x.cat?' · '+esc(x.cat):''}${x.pay==='card'?' · tarjeta':''}${x.note?' · '+esc(x.note):''}</span></span><span class="row" style="gap:6px"><span class="mono" style="color:${x.type==='in'||x.type==='loan'?'var(--ok)':'inherit'}">${x.type==='in'||x.type==='loan'||x.amount<0?'+':'−'}${money(Math.abs(x.amount))}</span><button class="small ghost danger" data-act="fin-del-move" data-id="${x.id}" aria-label="Borrar movimiento">×</button></span></div>`).join('')}</section>`;
+    const E=expectedIncome();const own=ownBank();const saved=F.goals.reduce((a,g)=>a+g.saved,0);
+    const rd=realDebts();const debt=rd.reduce((a,d)=>a+d.balance,0);
+    h+=`<section class="hero-money"><span class="label">Para ti, disponible</span><b class="big">${money(own)}</b>
+      <div class="hm-row"><span><small>Entró este mes</small>${money(M.inc)} <em>de ~${money(E)}</em></span><span><small>Ahorrado</small>${money(saved)}</span>${debt>0?`<span><small>Deuda</small>${money(debt)}</span>`:''}</div></section>`;
+    // Por pagar
+    const fx=fixedState();const rows=[];
+    if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
+      rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>${c.nextDue?niceDate(c.nextDue):''} · ${ok?'apartado ✓':'apartado '+money(ap)}</small><span class="thin"><i style="width:${c.minPay?Math.min(100,ap/c.minPay*100):0}%"></i></span></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
+    for(const d of F.debts.filter(d=>d.kind!=='card'&&d.balance>0))
+      rows.push(`<div class="prow"><span class="pdot ${d.priority?'risk':''}"></span><span class="pmain"><b>${esc(d.name)}</b><small>Debes ${money(d.balance)}${d.dueDay?' · el '+d.dueDay:''}</small></span><span class="pamt">${d.minPay?money(d.minPay):''}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${d.id}">Pagar</button></div>`);
+    for(const x of fx){
+      if(x.variable)rows.push(`<div class="prow"><span class="pdot"></span><span class="pmain"><b>${esc(x.name)}</b><small>Llevas ${money(x.spent)} de ~${money(x.est)}</small></span><span class="pamt"></span><button class="small" data-act="fix-add" data-id="${x.id}">+ Gasto</button></div>`);
+      else rows.push(`<div class="prow ${x.paid?'done':''}"><span class="pdot ${x.paid?'ok':''}"></span><span class="pmain"><b>${esc(x.name)}</b>${x.day?`<small>el ${x.day}</small>`:''}</span><span class="pamt">${money(x.amount)}</span>${x.paid?`<button class="small ghost" data-act="fix-undo" data-id="${x.id}">✓ Pagado</button>`:`<button class="small primary" data-act="pay-open" data-k="fixed" data-id="${x.id}">Pagar</button>`}</div>`);
+    }
+    const O=obligations();const need=O.fixed+O.card;const remE=Math.max(0,E-M.inc);
+    if(rows.length)h+=`<section class="card"><h3>Por pagar</h3><div class="plist">${rows.join('')}</div>${need>remE&&remE>0?`<p class="warnline">Este mes faltarían ${money(need-remE)}.</p>`:''}</section>`;
+    // Este mes
+    const bar=(lab,sp,bud)=>`<div class="mrow"><div class="row" style="justify-content:space-between"><b>${lab}</b><span class="mono">${money(Math.max(0,bud-sp))} <small class="muted">quedan</small></span></div>${finBar(sp,bud)}</div>`;
+    h+=`<section class="card"><h3>Este mes</h3>${bar('Día a día',M.needsSpent,M.needsBud)}${bar('Para ti',M.ownSpent,M.ownBud)}`;
+    const es=Object.entries(M.byCat).sort((a,b)=>b[1]-a[1]).slice(0,4);
+    if(es.length){const mx=es[0][1];h+=`<div class="stack" style="gap:6px;margin-top:4px">${es.map(([k,v])=>`<div class="catrow"><span>${esc(k)}</span><div class="bar"><i style="width:${v/mx*100}%;background:${CATS_OWN.includes(k)?'var(--warm)':'var(--accent)'}"></i></div><span class="mono">${money(v)}</span></div>`).join('')}</div>`}
+    h+=`</section>`;
+    if(rd.length){const pay=Math.max(monthlyAvg('debt',null,m=>!c||m.ref!==c.id),rd.reduce((a,d)=>a+d.minPay,0));h+=`<section class="card row" style="justify-content:space-between;flex-direction:row"><span><b>Libre de deudas</b><br><small class="muted">${monthsLabel(payoffAll(pay))}</small></span><span class="mono">${money(debt)}</span></section>`}
+    // Movimientos
+    const all=F.moves.slice().sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));const recent=all.slice(0,UI.movesMore?25:5);
+    const L={in:'Entró',debt:'Pago',save:'Ahorro',loan:'Préstamo',use:'Sacado'};
+    if(recent.length)h+=`<section class="card"><h3>Movimientos</h3><div class="plist">${recent.map(x=>`<div class="prow mv"><span class="pmain"><b>${esc(x.note||x.cat||(x.type==='out'?'Gasto':L[x.type]))}</b><small>${shortDate(x.date)} · ${x.type==='out'?(moveKind(x)==='own'?'para ti':'obligatorio')+(x.pay==='card'?' · tarjeta':''):L[x.type]}</small></span><span class="pamt ${x.type==='in'||x.type==='loan'?'pos':''}">${x.type==='in'||x.type==='loan'||x.amount<0?'+':'−'}${money(Math.abs(x.amount))}</span><button class="small ghost icon" data-act="fin-del-move" data-id="${x.id}" aria-label="Borrar">×</button></div>`).join('')}</div>
+      ${all.length>5?`<button class="ghost small" data-act="moves-more">${UI.movesMore?'Ver menos':'Ver más'}</button>`:''}</section>`;
   }
 
   if(sub==='registrar'){
-    const T=UI.finType||'in';const K=UI.outKind||'needs';const P=UI.payWith||'cash';
+    const T=UI.finType==='buy'?'buy':(UI.finType||'out');const K=UI.outKind||'needs';const P=UI.payWith||'cash';
+    const tabs=[['out','Gasté',ICON.coinOut],['in','Entró',ICON.coinIn],['save','Ahorré',ICON.task],['debt','Pagué',ICON.job],['buy','¿Lo compro?',ICON.bag]];
+    h+=`<div class="typegrid">${tabs.map(([k,l,ic])=>`<button class="tg ${T===k?'sel':''}" data-act="fin-type" data-v="${k}"><i>${ic}</i>${l}</button>`).join('')}</div>`;
     if(T!=='buy'){
-    const fixedVar=F.fixed.filter(x=>x.variable);
-    h+=`<section class="card"><h2>Registrar</h2><form id="f-fin" class="stack">
-      <div class="row">${[['in','Me entró plata'],['out','Gasté'],['debt','Pagué una deuda'],['save','Ahorré']].map(([k,l])=>`<button type="button" class="chip ${T===k?'sel':''}" data-act="fin-type" data-v="${k}">${l}</button>`).join('')}</div>
-      ${T==='out'?`<div class="row"><button type="button" class="chip ${K==='needs'?'sel':''}" data-act="out-kind" data-v="needs">Obligatorio</button><button type="button" class="chip ${K==='own'?'sel':''}" data-act="out-kind" data-v="own">Para mí</button></div>
-      <div class="row"><span class="label">Pagué con</span><button type="button" class="chip ${P==='cash'?'sel':''}" data-act="pay-with" data-v="cash">Efectivo o débito</button><button type="button" class="chip ${P==='card'?'sel':''}" data-act="pay-with" data-v="card">Tarjeta de crédito</button></div>`:''}
-      <div class="grid2"><label class="f">Cuánto<input id="fin-amt" inputmode="numeric" autocomplete="off" placeholder="Ej: 150.000"></label>
-      ${T==='out'?`<label class="f">En qué<select id="fin-cat">${(K==='own'?CATS_OWN:CATS_NEEDS).map(c=>`<option ${UI.preCat===c?'selected':''}>${c}</option>`).join('')}${K==='needs'?fixedVar.map(x=>`<option value="fx:${x.id}" ${UI.preCat==='fx:'+x.id?'selected':''}>${esc(x.name)} (variable)</option>`).join(''):''}</select></label>`:''}
-      ${T==='out'&&P==='card'?`<label class="f">Cuotas<select id="fin-cuotas">${[1,2,3,6,12,24,36].map(n=>`<option value="${n}">${n===1?'1 cuota (sin intereses)':n+' cuotas'}</option>`).join('')}</select></label>`:''}
-      ${T==='debt'?`<label class="f">Cuál deuda<select id="fin-ref">${F.debts.filter(d=>d.balance>0).map(d=>`<option value="${d.id}">${esc(d.name)}${d.kind==='card'?` · toca pagar ${money(d.minPay)}`:''}</option>`).join('')||'<option value="">No tienes deudas pendientes</option>'}</select></label>`:''}
-      ${T==='save'?`<label class="f">Para qué meta<select id="fin-ref">${goalsSorted().map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('')}<option value="">Ahorro general</option></select></label>`:''}
-      <label class="f">Fecha<input id="fin-date" type="date" value="${today}"></label></div>
-      ${T==='out'&&P==='card'?'<p class="muted">Cuenta como gasto de este mes y se suma a lo que pagas de tarjeta.</p>':''}
-      <label class="f">Nota (opcional)<input id="fin-note" autocomplete="off" placeholder="${T==='in'?'Ej: pago del domingo':T==='out'?'Ej: almuerzo':''}"></label>
-      <p class="danger" id="fin-err" hidden></p>
-      <button class="primary" type="button" data-act="submit">Guardar</button></form></section>`;
+      const cats=(K==='own'?CATS_OWN:CATS_NEEDS).concat(K==='needs'?F.fixed.filter(x=>x.variable).map(x=>'fx:'+x.id):[]);
+      const pre=UI.preCat&&cats.includes(UI.preCat)?UI.preCat:cats[0];
+      const catLab=v=>v.startsWith('fx:')?(F.fixed.find(x=>'fx:'+x.id===v)||{name:'U'}).name:v;
+      h+=`<section class="card"><form id="f-fin" class="stack">
+        <input id="fin-amt" class="amt" inputmode="numeric" autocomplete="off" placeholder="$ 0" value="${esc(UI.amtDraft||'')}" aria-label="Cuánto">
+        ${T==='out'?`<div class="row"><button type="button" class="chip ${K==='needs'?'sel':''}" data-act="out-kind" data-v="needs">Obligatorio</button><button type="button" class="chip ${K==='own'?'sel':''}" data-act="out-kind" data-v="own">Para mí</button>
+          <button type="button" class="chip ${P==='card'?'sel':''}" data-act="pay-with" data-v="${P==='card'?'cash':'card'}">${P==='card'?'✓ ':''}Con tarjeta</button></div>
+          <input type="hidden" id="fin-cat" value="${esc(pre)}"><div class="row catpick">${cats.map(v=>`<button type="button" class="chip small ${v===pre?'sel':''}" data-act="cat-pick" data-v="${esc(v)}">${esc(catLab(v))}</button>`).join('')}</div>
+          ${P==='card'?`<label class="f">Cuotas<select id="fin-cuotas">${[1,2,3,6,12,24,36].map(n=>`<option value="${n}">${n===1?'1 cuota (sin intereses)':n+' cuotas'}</option>`).join('')}</select></label>`:''}`:''}
+        ${T==='debt'?`<select id="fin-ref" aria-label="Cuál deuda">${F.debts.filter(d=>d.balance>0).map(d=>`<option value="${d.id}">${esc(d.name)}</option>`).join('')||'<option value="">No tienes deudas</option>'}</select>`:''}
+        ${T==='save'?`<select id="fin-ref" aria-label="Para qué meta">${goalsSorted().map(g=>`<option value="${g.id}">${esc(g.name)}</option>`).join('')}<option value="">Ahorro general</option></select>`:''}
+        <details class="more"><summary>Fecha y nota</summary><div class="grid2"><label class="f">Fecha<input id="fin-date" type="date" value="${today}"></label><label class="f">Nota<input id="fin-note" autocomplete="off"></label></div></details>
+        <p class="danger" id="fin-err" hidden></p>
+        <button class="primary big" type="button" data-act="submit">Guardar</button></form></section>`;
+    }else{
+      h+=`<section class="card" id="buy-card"><form id="f-buy" class="stack">
+        <input id="b-price" class="amt" inputmode="numeric" placeholder="$ 0" value="${UI.buy?UI.buy.price:''}" aria-label="Cuánto cuesta">
+        <input id="b-name" autocomplete="off" placeholder="¿Qué es? (opcional)" value="${esc(UI.buy?UI.buy.name:'')}">
+        <div class="row"><button type="button" class="chip ${(UI.buyKind||'own')==='own'?'sel':''}" data-act="buy-kind" data-v="own">Gusto</button><button type="button" class="chip ${UI.buyKind==='needs'?'sel':''}" data-act="buy-kind" data-v="needs">Obligatorio</button></div>
+        <p class="danger" id="b-err" hidden></p><button class="primary big" type="button" data-act="submit">¿Me alcanza?</button></form>${buyCheck()}
+        ${F.wish.filter(w=>Date.now()-w.at<864e5).map(w=>`<p class="muted">Pensando: ${esc(w.name||'compra')} · ${money(w.price)}</p>`).join('')}</section>`;
     }
-    h+=`<section class="card" id="buy-card"><h2>¿Me lo compro?</h2><p class="muted">Antes de comprar algo que no tenías planeado, mira si te descuadra el mes.</p>
-      <form id="f-buy" class="stack"><div class="grid2"><label class="f">Qué<input id="b-name" autocomplete="off" placeholder="Ej: audífonos" value="${esc(UI.buy?UI.buy.name:'')}"></label><label class="f">Cuánto cuesta<input id="b-price" inputmode="numeric" placeholder="Ej: 85.000" value="${UI.buy?UI.buy.price:''}"></label></div>
-      <div class="row"><button type="button" class="chip ${(UI.buyKind||'own')==='own'?'sel':''}" data-act="buy-kind" data-v="own">Es un gusto</button><button type="button" class="chip ${UI.buyKind==='needs'?'sel':''}" data-act="buy-kind" data-v="needs">Es obligatorio</button></div>
-      <p class="danger" id="b-err" hidden></p><button class="${T==='buy'?'primary':''}" type="button" data-act="submit">Revisar</button></form>${buyCheck()}
-      ${F.wish.filter(w=>Date.now()-w.at<864e5).map(w=>`<p class="muted">Pensando: ${esc(w.name||'compra')} (${money(w.price)}), te pregunto ${relDay(dkey(new Date(w.at+864e5)),today)}.</p>`).join('')}
-      ${T==='buy'?'<button class="ghost small" data-act="fin-type" data-v="in">Registrar un movimiento</button>':''}</section>`;
-  }
-
-  if(sub==='deudas'){
-    h+=debtIndicator();
-    const order=debtOrder();
-    h+=`<section class="card"><h2>Tus deudas</h2>${F.debts.length?F.debts.map(d=>{
-      if(d.kind==='card'){const s=cardSplit(d);
-        return `<div class="task"><div class="row" style="justify-content:space-between"><b>${esc(d.name)}</b>${d.balance>0?`<span class="mono">${money(d.balance)}</span>`:'<span class="pill p-bien">Al día</span>'}</div>
-        ${d.balance>0?`<button class="small primary" style="align-self:flex-start" data-act="pay-open" data-k="debt" data-id="${d.id}">Pagar tarjeta</button>`:''}
-        <span>Próximo pago: <b>${money(d.minPay)}</b>${d.nextDue?` el ${niceDate(d.nextDue)} (${relDay(d.nextDue,today)})`:''}</span>
-        <span class="muted">${s.one?`${money(s.one)} a 1 cuota, sin intereses. `:''}${s.multi?`${money(s.multi)} a varias cuotas.`:''}</span>
-        ${(d.purchases||[]).filter(p=>p.cuotas>1).map(p=>`<span class="muted">· ${esc(p.note||'Compra')} ${money(p.amount)} a ${p.cuotas} cuotas, faltan ${money(p.left)}</span>`).join('')}
-        <span class="muted">Corte: ${niceDate(cutInfo(d).cut)}. Lo que compres hasta ese día se paga el ${niceDate(cutInfo(d).payNow)}.</span>
-        <span class="muted">Apartado para el pago: ${money(Math.min(fin().env.card,d.minPay))} de ${money(d.minPay)}.</span>
-        <div class="grid2"><label class="f">Día de corte<input inputmode="numeric" data-debtset="${d.id}.cutDay" value="${d.cutDay||29}"></label><label class="f">Día de pago (mes siguiente)<input inputmode="numeric" data-debtset="${d.id}.payDay" value="${d.payDay||18}"></label><label class="f">Interés mensual % (a cuotas)<input inputmode="decimal" data-debtset="${d.id}.rate" value="${d.rate||0}"></label></div></div>`}
-      const pay=Math.max(monthlyAvg('debt',d.id),d.minPay||0);const paid=Math.max(0,(d.original||d.balance)-d.balance);const pct=d.original?Math.min(100,paid/d.original*100):0;
-      return `<div class="task"><div class="row" style="justify-content:space-between"><b>${esc(d.name)}</b>${d.balance<=0?'<span class="pill p-bien">Pagada</span>':d.priority?'<span class="pill p-riesgo">Prioridad</span>':order[0]&&order[0].id===d.id?'<span class="pill p-ajustado">Va primero</span>':''}</div>
-      <div class="bar"><i style="width:${pct}%"></i></div>
-      <span class="muted">Debes ${money(Math.max(0,d.balance))} de ${money(d.original||d.balance)}${d.rate?` · interés ${String(d.rate).replace('.',',')}% mensual`:''}${d.dueDay?` · pagas los ${d.dueDay}`:''}</span>
-      ${d.balance>0?`<span>Terminas de pagar: ${monthsLabel(payoffMonths(d.balance,d.rate,pay))}${pay?` <span class="muted">(pagando ${money(pay)} al mes)</span>`:''}</span>`:''}
-      <div class="row">${d.balance>0?`<button class="small primary" data-act="pay-open" data-k="debt" data-id="${d.id}">Pagar</button>`:''}<button class="small ghost danger" data-act="fin-del-debt" data-id="${d.id}">${UI.confirmDel===d.id?'¿Seguro? Quitar':'Quitar'}</button></div></div>`}).join(''):'<p class="muted">No tienes deudas registradas.</p>'}</section>
-    <section class="card"><h3>Agregar deuda</h3><form id="f-debt" class="stack">
-      <div class="grid2"><label class="f">A quién o qué<input id="d-name" autocomplete="off" placeholder="Ej: préstamo de mi tío"></label><label class="f">Cuánto debes hoy<input id="d-bal" inputmode="numeric" placeholder="Ej: 800.000"></label></div>
-      <div class="grid2"><label class="f">Interés mensual % (0 si no cobra)<input id="d-rate" inputmode="decimal" value="0"></label><label class="f">Cuota mínima al mes<input id="d-min" inputmode="numeric" placeholder="Opcional"></label><label class="f">Día de pago<input id="d-day" inputmode="numeric" placeholder="1 a 28, opcional"></label></div>
-      <p class="muted">Las compras con tarjeta no se agregan aquí: regístralas en Registrar → Gasté → Tarjeta de crédito.</p>
-      <p class="danger" id="d-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar deuda</button></form></section>`;
   }
 
   if(sub==='ahorro'){
     const tot=F.goals.reduce((a,g)=>a+g.saved,0);
-    h+=`<section class="card"><div class="top"><h2>Metas de ahorro</h2><span class="muted">Llevas <b>${money(tot)}</b></span></div>
-    <p class="muted">Alta recibe la mayor parte (70%), media 25% y baja 5%. "Cuando sobre" solo recibe lo que sobra: si las demás ya están llenas o al final del mes te sobra plata. Dentro de cada nivel, las metas sin fecha se llenan primero y en orden; cuando una llega al tope, su parte pasa a la siguiente.</p>
-    ${F.goals.length?goalsSorted().map(g=>{const i=goalInfo(g);const ontrack=i.left<=0?null:i.mt?i.pace>=i.need*0.95:null;
-      return `<div class="task"><div class="row" style="justify-content:space-between"><b>${esc(g.name)}</b><span class="mono">${money(g.saved)} / ${money(g.target)}</span></div>${finBar(g.saved,g.target).replace('var(--risk)','var(--ok)')}
-      <div class="grid2"><label class="f">Importancia<select data-goalset="${g.id}.prio">${PRIO_ORDER.map(k=>`<option value="${k}" ${(PRIO[g.prio]?g.prio:'media')===k?'selected':''}>${PRIO[k].l}</option>`).join('')}</select></label><label class="f">La quiero para<input type="month" data-goalset="${g.id}.deadline" value="${g.deadline||''}"></label></div>
-      <span>${i.left<=0?'Meta cumplida.':i.mt?`Para llegar a tiempo necesitas <b>${money(r1000(i.need))}</b> al mes.`:i.prio==='sobra'?'Se llena con lo que te sobre.':'Sin fecha: se va llenando en orden dentro de su nivel.'}</span>
-      ${i.left>0?`<span class="muted">${i.pace>0?`Vas a ${money(i.pace)} al mes: la cumples en ${monthsLabel(Math.ceil(i.left/i.pace))}.`:'Aún no has ahorrado aquí este mes.'}</span>`:''}
-      ${ontrack===false?'<span class="pill p-ajustado" style="align-self:flex-start">Vas atrasado para esa fecha</span>':ontrack?'<span class="pill p-bien" style="align-self:flex-start">Vas a tiempo</span>':''}
-      <div class="row"><button class="small ghost danger" data-act="fin-del-goal" data-id="${g.id}">${UI.confirmDel===g.id?'¿Seguro? Quitar':'Quitar'}</button></div></div>`}).join(''):'<p class="muted">Una buena primera meta es un fondo para imprevistos, así una emergencia no se vuelve una deuda nueva.</p>'}</section>
-    <section class="card"><h3>Agregar meta</h3><form id="f-goal" class="stack">
-      <div class="grid2"><label class="f">Para qué<input id="g-name" autocomplete="off" placeholder="Ej: Fondo para imprevistos"></label><label class="f">Cuánto quieres juntar<input id="g-target" inputmode="numeric" placeholder="Ej: 500.000"></label><label class="f">Ya tienes<input id="g-saved" inputmode="numeric" value="0"></label></div>
-      <div class="grid2"><label class="f">Importancia<select id="g-prio"><option value="alta">Alta</option><option value="media" selected>Media</option><option value="baja">Baja</option><option value="sobra">Cuando sobre</option></select></label><label class="f">La quiero para (opcional)<input id="g-deadline" type="month"></label></div>
-      <p class="danger" id="g-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar meta</button></form></section>`;
+    h+=`<section class="card"><div class="top"><h2>Metas</h2><b class="mono">${money(tot)}</b></div><div class="plist">
+    ${F.goals.length?goalsSorted().map(g=>{const i=goalInfo(g);const open=UI.gopen===g.id;const pr=PRIO[g.prio]?g.prio:'media';
+      return `<div class="gcard ${open?'open':''}"><button class="grow" data-act="gopen" data-id="${g.id}"><span class="pmain"><b>${esc(g.name)} <span class="pri pri-${pr}">${PRIO[pr].l}</span></b>
+        <span class="thin"><i style="width:${g.target?Math.min(100,g.saved/g.target*100):0}%"></i></span>
+        <small>${money(g.saved)} de ${money(g.target)}${i.left<=0?' · cumplida':i.mt?` · ${money(r1000(i.need))}/mes para ${MN[+g.deadline.slice(5,7)-1].slice(0,3)} ${g.deadline.slice(0,4)}`:pr==='sobra'?' · con lo que sobre':''}</small></span><span class="chev">${open?'▴':'▾'}</span></button>
+        ${open?`<div class="tdetail"><div class="grid2"><label class="f">Importancia<select data-goalset="${g.id}.prio">${PRIO_ORDER.map(k=>`<option value="${k}" ${pr===k?'selected':''}>${PRIO[k].l}</option>`).join('')}</select></label><label class="f">La quiero para<input type="month" data-goalset="${g.id}.deadline" value="${g.deadline||''}"></label></div>
+          ${i.left>0&&i.pace>0?`<small class="muted">A tu ritmo la cumples en ${monthsLabel(Math.ceil(i.left/i.pace))}.</small>`:''}
+          <button class="small ghost danger" style="align-self:flex-start" data-act="fin-del-goal" data-id="${g.id}">${UI.confirmDel===g.id?'¿Seguro? Quitar':'Quitar meta'}</button></div>`:''}</div>`}).join(''):'<p class="muted">Agrega tu primera meta, por ejemplo un fondo para imprevistos.</p>'}</div>
+    <details class="more"><summary>+ Nueva meta</summary><form id="f-goal" class="stack">
+      <div class="grid2"><label class="f">Para qué<input id="g-name" autocomplete="off"></label><label class="f">Cuánto<input id="g-target" inputmode="numeric"></label><label class="f">Ya tienes<input id="g-saved" inputmode="numeric" value="0"></label></div>
+      <div class="grid2"><label class="f">Importancia<select id="g-prio"><option value="alta">Alta</option><option value="media" selected>Media</option><option value="baja">Baja</option><option value="sobra">Cuando sobre</option></select></label><label class="f">Para cuándo<input id="g-deadline" type="month"></label></div>
+      <p class="danger" id="g-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar</button></form></details></section>
+    <p class="muted center">Alta recibe más, baja poco, "cuando sobre" solo lo que sobra.</p>`;
   }
 
   if(sub==='presupuesto'){
-    const fx=fixedState();
-    h+=`<section class="card"><div class="top"><h2>Pagos fijos del mes</h2><span class="muted">~${money(fx.reduce((a,x)=>a+x.expected,0))} al mes</span></div>${fixedList(false)}</section>
-    <section class="card"><h3>Ingreso esperado al mes</h3><div class="grid2"><label class="f">Lo que crees que te entra<input data-fin="expectedIncome" inputmode="numeric" value="${F.expectedIncome||300000}"></label></div>
-      <p class="muted">Con lo que de verdad te vaya entrando lo ajusto: hoy calculo con <b>${money(expectedIncome())}</b>. Con eso decido qué porcentaje de cada ingreso va a obligaciones.</p></section>
-    <section class="card"><h3>Agregar pago fijo</h3><form id="f-fixed" class="stack"><div class="grid2"><label class="f">Qué<input id="x-name" autocomplete="off" placeholder="Ej: Internet"></label><label class="f">Cuánto al mes<input id="x-amt" inputmode="numeric" placeholder="Ej: 20.000"></label><label class="f">Día de pago<input id="x-day" inputmode="numeric" placeholder="Opcional"></label></div>
-      <label class="check"><input type="checkbox" id="x-var"> Cambia mucho cada mes (lo calculo con lo que gastas)</label>
-      <p class="danger" id="x-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar</button></form></section>`;
-    const S4=F.split.debt+F.split.save+F.split.needs+F.split.own;
-    h+=`<section class="card"><h2>Cómo reparto lo que te entra</h2>
-    <div class="grid2"><label class="f">Deudas %<input data-fin="split.debt" inputmode="numeric" value="${F.split.debt}"></label><label class="f">Ahorro %<input data-fin="split.save" inputmode="numeric" value="${F.split.save}"></label><label class="f">Día a día %<input data-fin="split.needs" inputmode="numeric" value="${F.split.needs}"></label><label class="f">Para ti %<input data-fin="split.own" inputmode="numeric" value="${F.split.own}"></label></div>
-    ${S4!==100?`<p class="danger">Suman ${S4}%. Ajústalos para que den 100%.</p>`:''}
-    <p class="muted">Estos porcentajes se aplican a lo que queda <b>después</b> de apartar tus pagos fijos y el próximo pago de la tarjeta. Si no tienes otras deudas, la parte de deudas se va al ahorro. Si tienes una deuda prioritaria (como un préstamo de tu novia), recibe lo de deudas y lo de ahorro hasta saldarla.</p>
-    <span class="label">Qué deuda pagar primero</span>
-    <div class="row"><button class="chip ${F.strategy==='avalancha'?'sel':''}" data-act="fin-strat" data-v="avalancha">La de más interés</button><button class="chip ${F.strategy==='bola'?'sel':''}" data-act="fin-strat" data-v="bola">La más pequeña</button></div>
-    <p class="muted">${F.strategy==='avalancha'?'Pagando primero la de más interés, en total pagas menos intereses.':'Pagando primero la más pequeña, terminas deudas más rápido y ves avances antes.'}</p></section>`;
+    const fx=fixedState();const S4=F.split.debt+F.split.save+F.split.needs+F.split.own;
+    h+=`<section class="card"><h3>Ingreso esperado al mes</h3><input data-fin="expectedIncome" inputmode="numeric" value="${F.expectedIncome||300000}" aria-label="Ingreso esperado"><small class="muted">Ajustado con lo real: ${money(expectedIncome())}</small></section>
+    <section class="card"><h3>Pagos fijos</h3><div class="plist">${fx.map(x=>`<div class="prow"><span class="pmain"><b>${esc(x.name)}</b><small>${x.variable?'Varía':x.day?'el '+x.day:''}</small></span><input class="mini" data-fixamt="${x.id}" inputmode="numeric" value="${x.amount||0}" aria-label="Valor de ${esc(x.name)}"><button class="small ghost icon danger" data-act="fix-del" data-id="${x.id}" aria-label="Quitar">${UI.confirmDel===x.id?'?':'×'}</button></div>`).join('')}</div>
+      <details class="more"><summary>+ Agregar pago fijo</summary><form id="f-fixed" class="stack"><div class="grid2"><label class="f">Qué<input id="x-name" autocomplete="off"></label><label class="f">Cuánto<input id="x-amt" inputmode="numeric"></label><label class="f">Día<input id="x-day" inputmode="numeric"></label></div>
+      <label class="check"><input type="checkbox" id="x-var"> Varía cada mes</label><p class="danger" id="x-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar</button></form></details></section>
+    <section class="card"><h3>Reparto de lo que sobra</h3><div class="split4">${[['debt','Deudas'],['save','Ahorro'],['needs','Día a día'],['own','Para ti']].map(([k,l])=>`<label class="f">${l}<input data-fin="split.${k}" inputmode="numeric" value="${F.split[k]}"></label>`).join('')}</div>
+      ${S4!==100?`<p class="danger">Suman ${S4}%: deben dar 100%.</p>`:''}
+      <div class="row"><span class="label">Pagar primero</span><button class="chip small ${F.strategy==='avalancha'?'sel':''}" data-act="fin-strat" data-v="avalancha">Más interés</button><button class="chip small ${F.strategy==='bola'?'sel':''}" data-act="fin-strat" data-v="bola">Más pequeña</button></div></section>
+    <section class="card"><h3>Deudas</h3><div class="plist">${F.debts.map(d=>`<div class="prow"><span class="pmain"><b>${esc(d.name)}</b><small>${money(d.balance)}${d.kind==='card'?` · corte ${d.cutDay||29}, pago ${d.payDay||18}`:d.rate?` · ${d.rate}% mes`:''}</small></span>${d.kind==='card'?'':`<button class="small ghost icon danger" data-act="fin-del-debt" data-id="${d.id}" aria-label="Quitar">${UI.confirmDel===d.id?'?':'×'}</button>`}</div>`).join('')||'<p class="muted">Sin deudas.</p>'}</div>
+      ${c?`<details class="more"><summary>Ajustes de la tarjeta</summary><div class="grid2"><label class="f">Día de corte<input inputmode="numeric" data-debtset="${c.id}.cutDay" value="${c.cutDay||29}"></label><label class="f">Día de pago<input inputmode="numeric" data-debtset="${c.id}.payDay" value="${c.payDay||18}"></label><label class="f">Interés % a cuotas<input inputmode="decimal" data-debtset="${c.id}.rate" value="${c.rate||0}"></label></div></details>`:''}
+      <details class="more"><summary>+ Agregar deuda</summary><form id="f-debt" class="stack"><div class="grid2"><label class="f">A quién<input id="d-name" autocomplete="off"></label><label class="f">Cuánto debes<input id="d-bal" inputmode="numeric"></label></div>
+      <div class="grid2"><label class="f">Interés % mes<input id="d-rate" inputmode="decimal" value="0"></label><label class="f">Cuota<input id="d-min" inputmode="numeric"></label><label class="f">Día de pago<input id="d-day" inputmode="numeric"></label></div>
+      <p class="danger" id="d-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar</button></form></details></section>`;
   }
   return h;
 }
@@ -1608,8 +1628,8 @@ function delMove(id){
 function finAction(act,el){
   const F=fin(),id=el.dataset.id,today=dkey(new Date());
   switch(act){
-    case 'out-kind':UI.outKind=el.dataset.v;UI.preCat=null;render();return;
-    case 'pay-with':UI.payWith=el.dataset.v;render();return;
+    case 'out-kind':{const a=document.getElementById('fin-amt');if(a)UI.amtDraft=a.value;UI.outKind=el.dataset.v;UI.preCat=null;render();return}
+    case 'pay-with':{const a=document.getElementById('fin-amt');if(a)UI.amtDraft=a.value;UI.payWith=el.dataset.v;render();return}
     case 'fin-go':{const t=el.dataset.t;UI.sub.plata='registrar';UI.finType=t;render();if(t==='buy'){const b=document.getElementById('b-name');if(b)b.focus()}else{const a=document.getElementById('fin-amt');if(a)a.focus()}return}
     case 'buy-kind':UI.buyKind=el.dataset.v;if(UI.buy){UI.buy.kind=el.dataset.v}render();return;
     case 'buy-yes':{const C=UI.buy;addMove({type:'out',kind:C.kind,amount:C.price,date:today,cat:C.kind==='own'?'Gustos':'Otro',note:C.name||'Compra'});UI.buy=null;save('finance');render();toast('Anotado como gasto.');return}
@@ -1633,7 +1653,7 @@ function finAction(act,el){
     case 'pay-go':doPay();return;
     case 'fix-pay':{const x=F.fixed.find(f=>f.id===id);if(!x)return;const mk=curMonth();const m={type:'out',kind:'needs',amount:x.amount,date:today,cat:x.name,note:'Pago fijo',fixedPaid:x.id};addMove(m);(F.fixedPaid[mk]=F.fixedPaid[mk]||{})[x.id]=m.id;save('finance');render();toast(`${x.name}: pagado.`);return}
     case 'fix-undo':{const mk=curMonth();const v=(F.fixedPaid[mk]||{})[id];if(typeof v==='string')delMove(v);if(F.fixedPaid[mk])delete F.fixedPaid[mk][id];save('finance');render();return}
-    case 'fix-add':{UI.sub.plata='registrar';UI.finType='out';UI.outKind='needs';UI.payWith='cash';UI.preCat='fx:'+id;render();const a=document.getElementById('fin-amt');if(a)a.focus();return}
+    case 'fix-add':{UI.sub.plata='registrar';UI.finType='out';UI.outKind='needs';UI.payWith='cash';UI.preCat='fx:'+id;UI.amtDraft='';render();const a=document.getElementById('fin-amt');if(a)a.focus();return}
     case 'fix-del':{if(UI.confirmDel===id){F.fixed=F.fixed.filter(x=>x.id!==id);UI.confirmDel=null;save('finance')}else UI.confirmDel=id;render();return}
   }
 }
@@ -1653,7 +1673,7 @@ function finForm(f){
     UI.buy={name:document.getElementById('b-name').value.trim(),price,kind:UI.buyKind||'own'};render();return;
   }
   if(f.id==='f-fin'){
-    const T=UI.finType||'in';const amt=parseMoney(document.getElementById('fin-amt').value);
+    const T=UI.finType||'out';const amt=parseMoney(document.getElementById('fin-amt').value);
     if(!(amt>0))return err('fin-err')('Escribe cuánto, por ejemplo 150.000.');
     const refEl=document.getElementById('fin-ref');const ref=refEl?refEl.value:'';
     if(T==='debt'&&!ref)return err('fin-err')('No tienes deudas pendientes.');
@@ -1665,7 +1685,7 @@ function finForm(f){
       if(cat.startsWith('fx:')){const fx=F.fixed.find(x=>x.id===cat.slice(3));m.fixedId=cat.slice(3);cat=fx?fx.name:'Universidad'}m.cat=cat;
       if(UI.payWith==='card'){const c=ensureCard();const n=+document.getElementById('fin-cuotas').value||1;const p={id:uid(),date,amount:amt,cuotas:n,left:amt,note:note||cat};c.purchases=c.purchases||[];c.purchases.push(p);cardRecalc(c);m.pay='card';m.cardPid=p.id}}
     addMove(m);
-    save('finance');if(T==='in')UI.split={amount:amt,plan:m.plan,moveId:m.id};UI.preCat=null;render();
+    UI.amtDraft='';save('finance');if(T==='in'){UI.split={amount:amt,plan:m.plan,moveId:m.id};UI.sub.plata='resumen'}UI.preCat=null;render();
     let msg=T==='in'?'Anotado. Mira cómo repartirlo.':T==='debt'?'Pago anotado. La deuda bajó.':T==='save'?'Ahorro anotado.':m.pay==='card'?'Gasto anotado y sumado a la tarjeta.':'Gasto anotado.';
     if(T==='out'&&before&&before.inc>0){const left=(K==='own'?before.ownLeft:before.needsLeft)-amt;if(left<0)msg=`Anotado, pero te pasaste ${money(-left)} de tu presupuesto ${K==='own'?'para ti':'de obligatorios'}.`}
     toast(msg);if(T==='in'&&window.scrollTo)window.scrollTo(0,0);return;
@@ -1753,7 +1773,10 @@ document.addEventListener('click',e=>{
       state.journal.commuteActive=null;save('journal');render();
       const n=state.journal.commutes.filter(t=>t.dir===c.dir).length;
       toast(min<3||min>180?'Ese trayecto se ve raro, no lo cuento.':`Te demoraste ${min} min. Llevo ${n} ${n===1?'trayecto medido':'trayectos medidos'} ${c.dir==='ida'?'de ida':'de vuelta'}.`);break}
-    case 'fin-type':UI.finType=el.dataset.v;UI.preCat=null;render();break;
+    case 'fin-type':{const a=document.getElementById('fin-amt');if(a)UI.amtDraft=a.value;UI.finType=el.dataset.v;UI.preCat=null;render();break}
+    case 'cat-pick':{const h=document.getElementById('fin-cat');if(h)h.value=el.dataset.v;UI.preCat=el.dataset.v;el.parentNode.querySelectorAll('.chip').forEach(b=>b.classList.toggle('sel',b===el));break}
+    case 'gopen':UI.gopen=UI.gopen===id?null:id;render();break;
+    case 'moves-more':UI.movesMore=!UI.movesMore;render();break;
     case 'out-kind':case 'pay-with':case 'fin-go':case 'fix-pay':case 'fix-undo':case 'fix-add':case 'fix-del':case 'pay-open':case 'pay-src':case 'pay-cancel':case 'pay-go':case 'short-save':case 'short-borrow':case 'sweep':case 'sweep-no':case 'buy-kind':case 'buy-yes':case 'buy-wait':case 'buy-no':case 'wish-buy':case 'wish-drop':finAction(act,el);break;
     case 'sub':UI.sub[el.dataset.group]=el.dataset.v;lsSet('ui.sub',UI.sub);render();window.scrollTo&&window.scrollTo(0,0);break;
     case 'fin-split-close':UI.split=null;render();break;
