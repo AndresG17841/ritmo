@@ -1,8 +1,8 @@
 /* ===== Avisos: ventanas emergentes desde la propia app ===== */
 const NOTI={day:null,shown:{},snoozed:[],current:null};
 const DESK=window.ritmoDesktop||null;
-function alertsFor(P){
-  const T=P.days[0];const out=[];if(!T)return out;
+function alertsFor(P,di){
+  const T=P.days[di||0];const out=[];if(!T||T.away)return out;
   for(const b of T.blocks){
     if(b.type==='task'){
       const t=state.tasks.items.find(x=>x.id===b.taskId);
@@ -20,6 +20,7 @@ function alertsFor(P){
   return out;
 }
 function checkAlerts(){
+  if(LN){scheduleNative();return}
   if(UI.auth||NOTI.current)return;
   const P=plan();const now=P.nowMin;
   if(NOTI.day!==P.today){NOTI.day=P.today;NOTI.shown=lsGet('noti.'+P.today)||{}}
@@ -52,7 +53,7 @@ function showAlert(a){
 function closeAlert(){NOTI.current=null;const el=document.getElementById('popup');if(el){el.hidden=true;el.innerHTML=''}setTimeout(checkAlerts,500)}
 function alertAction(act){
   const a=NOTI.current;if(!a)return;
-  const snooze=m=>NOTI.snoozed.push({a,until:Date.now()+m*60000});
+  const snooze=m=>{if(LN)nativeOne(a,Date.now()+m*60000);else NOTI.snoozed.push({a,until:Date.now()+m*60000})};
   switch(act){
     case 'start':stopActive();state.tasks.active={taskId:a.taskId,start:Date.now()};save('tasks');if(DESK)DESK.show();location.hash='ahora';break;
     case 'cant':if(DESK)DESK.show();location.hash='ahora';setTimeout(openCommitSheet,50);break;
@@ -67,8 +68,69 @@ function alertAction(act){
 if(DESK&&DESK.onAction)DESK.onAction(({key,act})=>{if(NOTI.current&&NOTI.current.key===key)alertAction(act)});
 setInterval(checkAlerts,20000);
 function notifPermissionCard(){
+  if(LN)return `<section class="card"><h2>Avisos</h2><p>Estás en Ritmo para Android: los avisos llegan como notificaciones del celular, aunque esté bloqueado o tengas la app cerrada.</p>${NATIVE.perm&&NATIVE.perm!=='granted'?'<p class="danger">No tengo permiso para notificarte. Actívalo en Ajustes del celular → Apps → Ritmo → Notificaciones.</p>':''}<p class="muted">Para que se vean encima de todo: Ajustes del celular → Apps → Ritmo → Notificaciones → Avisos importantes → "Mostrar en pantalla" o "Ventana emergente".</p><div class="row"><button class="small" data-act="test-native">Probar en 10 segundos</button></div></section>`;
   if(DESK)return `<section class="card"><h2>Avisos</h2><p>Estás en Ritmo para Windows: los avisos salen en una ventana encima de todo, aunque tengas la app cerrada en la bandeja.</p><div class="row"><button class="small" data-act="test-alert">Probar un aviso</button><button class="small ghost" data-act="cancel-shutdown">Cancelar apagado programado</button></div></section>`;
   const p=('Notification' in window)?Notification.permission:'unsupported';
   return `<section class="card"><h2>Avisos</h2><p class="muted">Mientras tengas Ritmo abierto, te aviso con una ventana dentro de la app${p==='granted'?' y con una notificación del sistema si está en segundo plano':''}.</p>
     <div class="row">${p==='default'?'<button class="small primary" data-act="ask-notif">Permitir notificaciones</button>':''}<button class="small" data-act="test-alert">Probar un aviso</button></div></section>`;
 }
+
+/* ----- Android: notificaciones del sistema (suenan con el celular bloqueado) ----- */
+const CAPN=window.Capacitor&&window.Capacitor.isNativePlatform&&window.Capacitor.isNativePlatform()?window.Capacitor:null;
+const LN=CAPN&&CAPN.Plugins?CAPN.Plugins.LocalNotifications:null;
+const NATIVE={sig:'',byId:{},busy:false,ready:false};
+function nId(key){let h=7;for(let i=0;i<key.length;i++)h=(h*31+key.charCodeAt(i))|0;return Math.abs(h)%2000000000+1}
+function lite(a){return {key:a.key,kind:a.kind,big:a.big,title:a.title,body:a.body,taskId:a.taskId,end:a.end,pingId:a.pingId,pingMin:a.pingMin,buttons:a.buttons}}
+function nativeItem(a,at,id){
+  return {id:id||nId(a.key),title:a.title,body:a.body,schedule:{at:new Date(at),allowWhileIdle:true},channelId:a.big?'avisos':'suaves',
+    actionTypeId:['task','go','wind','ping','taskend'].includes(a.kind)?a.kind:undefined,smallIcon:'ic_stat_ritmo',iconColor:'#5B4FE0',autoCancel:true,extra:{a:lite(a)}};
+}
+async function nativeOne(a,at){if(!LN)return;try{await LN.schedule({notifications:[nativeItem(a,at,nId(a.key+':'+at))]})}catch(e){}}
+async function scheduleNative(force){
+  if(!LN||!NATIVE.ready||UI.auth||NATIVE.busy)return;
+  const P=plan();const nowMs=Date.now();const act=state.tasks.active;const list=[];
+  for(let di=0;di<2;di++){
+    const D=P.days[di];if(!D)continue;const base=parseKey(D.k).getTime();
+    const done=((state.journal.days[D.k]||{}).pingDone)||{};
+    for(const a of alertsFor(P,di)){
+      const at=base+a.at*60000;if(at<=nowMs+15000)continue;
+      if(a.onlyIfActive&&!(act&&act.taskId===a.onlyIfActive))continue;
+      if(a.kind==='task'&&act&&act.taskId===a.taskId&&di===0)continue;
+      if(a.kind==='ping'&&done[a.pingId]>=a.pingMin)continue;
+      list.push(nativeItem(a,at));
+    }
+  }
+  const sig=JSON.stringify(list.map(n=>[n.id,+n.schedule.at,n.title]));
+  if(!force&&sig===NATIVE.sig)return;
+  NATIVE.busy=true;
+  try{
+    const pend=await LN.getPending();const ours=(pend.notifications||[]).filter(n=>!(n.extra&&n.extra.snooze));
+    if(ours.length)await LN.cancel({notifications:ours.map(n=>({id:n.id}))});
+    for(let i=0;i<list.length;i+=40)await LN.schedule({notifications:list.slice(i,i+40)});
+    NATIVE.sig=sig;
+  }catch(e){console.warn('avisos',e)}
+  NATIVE.busy=false;
+}
+async function nativeInit(){
+  if(!LN)return;
+  try{
+    let p=await LN.checkPermissions();if(p.display!=='granted')p=await LN.requestPermissions();
+    NATIVE.perm=p.display;
+    await LN.createChannel({id:'avisos',name:'Avisos importantes',description:'Empezar tareas, salir, pantallas fuera',importance:5,visibility:1,vibration:true,lights:true,lightColor:'#8F56EE'});
+    await LN.createChannel({id:'suaves',name:'Avisos suaves',description:'Agua, descanso, tiempo libre',importance:3,visibility:1,vibration:false});
+    await LN.registerActionTypes({types:[
+      {id:'task',actions:[{id:'start',title:'Empiezo'},{id:'snooze10',title:'En 10 min'}]},
+      {id:'go',actions:[{id:'left',title:'Ya salgo'},{id:'snooze5',title:'En 5 min'}]},
+      {id:'wind',actions:[{id:'ok',title:'Entendido'},{id:'snooze10',title:'En 10 min'}]},
+      {id:'ping',actions:[{id:'ping-ok',title:'Listo'},{id:'snooze20',title:'En 20 min'}]},
+      {id:'taskend',actions:[{id:'pause',title:'Pausar y guardar'},{id:'snooze15',title:'Sigo 15 min'}]}]});
+    LN.addListener('localNotificationActionPerformed',ev=>{
+      const a=ev.notification&&ev.notification.extra&&ev.notification.extra.a;if(!a)return;
+      const run=()=>{NOTI.current=a;if(ev.actionId&&ev.actionId!=='tap')alertAction(ev.actionId);else{NOTI.current=null;location.hash='ahora';render()}};
+      if(UI.auth||!sbUser){setTimeout(run,2500)}else run();
+    });
+    NATIVE.ready=true;scheduleNative(true);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleNative(true)});
+  }catch(e){console.warn('avisos',e)}
+}
+nativeInit();

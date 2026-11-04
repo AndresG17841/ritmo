@@ -27,7 +27,7 @@ R("""    case 'go':location.hash""","""    case 'login':doAuth('login');break;
     case 'alert':alertAction(el.dataset.v);break;
     case 'test-alert':showAlert({key:'test:'+Date.now(),kind:'task',big:true,title:'Toca: tarea de prueba',body:'Así se ve un aviso. Esta es solo una prueba.',buttons:[['ok','Entendido'],['snooze10','En 10 min']]});break;
     case 'ask-notif':try{Notification.requestPermission().then(()=>render())}catch(e){}break;
-    case 'cancel-shutdown':if(window.ritmoDesktop){window.ritmoDesktop.cancelShutdown();toast('Apagado cancelado.')}break;
+    case 'test-native':nativeOne({key:'test',kind:'task',big:true,title:'Toca: tarea de prueba',body:'Así te llegan los avisos de Ritmo.',buttons:[]},Date.now()+10000);toast('Bloquea el celular: en 10 segundos te llega.');break;\n    case 'cancel-shutdown':if(window.ritmoDesktop){window.ritmoDesktop.cancelShutdown();toast('Apagado cancelado.')}break;
     case 'go':location.hash""")
 R("document.addEventListener('change',e=>{\n  const el=e.target;","document.addEventListener('change',e=>{\n  const el=e.target;\n  if(el.id==='imp-file'&&el.files&&el.files[0]){importBackup(el.files[0]);return}")
 R("  if(f.id==='f-pay')return doPay();","  if(f.id==='f-login')return doAuth('login');\n  if(f.id==='f-pay')return doPay();")
