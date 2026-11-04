@@ -1,0 +1,13 @@
+{
+  "appId": "co.ritmo.app",
+  "appName": "Ritmo",
+  "webDir": "docs",
+  "server": {
+    "url": "https://andresg17841.github.io/ritmo/",
+    "errorPath": "index.html"
+  },
+  "android": { "backgroundColor": "#131129" },
+  "plugins": {
+    "LocalNotifications": { "smallIcon": "ic_stat_ritmo", "iconColor": "#5B4FE0" }
+  }
+}

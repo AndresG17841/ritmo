@@ -1,2 +1,5 @@
 node_modules/
 *.zip
+android/app/build/
+android/build/
+android/.gradle/
