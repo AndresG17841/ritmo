@@ -800,10 +800,31 @@ function tomorrowLine(P){
 }
 function blockRow(b,now,isToday=true){
   const cls=isToday?(b.end<=now?'past':(b.start<=now&&b.end>now?'cur':'')):'';
-  const extra=b.type==='commit'?` <button class="ghost small danger" data-act="del-commit" data-id="${b.cid}">Quitar</button>`:'';
+  const extra=b.type==='commit'?`<span class="row" style="gap:6px;grid-column:2"><button class="ghost small" data-act="edit-commit-go" data-id="${b.cid}">Editar</button><button class="ghost small danger" data-act="del-commit" data-id="${b.cid}">Quitar</button></span>`:'';
   return `<div class="blk ${cls}"><span class="t">${fmt(b.start)}<br>${fmt(b.end)}</span><div class="b t-${b.type}"><span class="ic" aria-hidden="true">${ICON[b.type]||ICON.open}</span><strong>${esc(b.title)}</strong>${b.sub?`<small>${esc(b.sub)}</small>`:''}${extra}</div></div>`;
 }
 
+function pruneCommitments(){
+  const today=dkey(new Date());const before=state.config.commitments.length;
+  state.config.commitments=state.config.commitments.filter(c=>c.repeat==='weekly'||(c.endDate||c.date)>=today);
+  return state.config.commitments.length!==before;
+}
+function commitEditForm(c){
+  return `<form class="stack" data-form="edit-commit" data-id="${c.id}" style="padding:12px;border-radius:16px;background:var(--sunk)">
+    <label class="f">Qué es<input id="ec-label" value="${esc(c.label)}"></label>
+    <div class="grid2"><label class="f">${c.endDate?'Desde el día':'Día'}<input id="ec-date" type="date" value="${c.date}"></label><label class="f">Desde<input id="ec-start" type="time" value="${c.start}"></label></div>
+    <div class="grid2">${c.endDate?`<label class="f">Hasta el día<input id="ec-enddate" type="date" value="${c.endDate}"></label>`:''}<label class="f">Hasta<input id="ec-end" type="time" value="${c.end}"></label></div>
+    ${c.endDate?'':`<label class="check"><input type="checkbox" id="ec-weekly" ${c.repeat==='weekly'?'checked':''}> Se repite cada semana</label>`}
+    <div class="row"><button class="primary small" type="button" data-act="submit">Guardar cambios</button><button class="small ghost" type="button" data-act="edit-commit" data-id="${c.id}">Cancelar</button></div></form>`;
+}
+function taskEditForm(t){
+  return `<form class="stack" data-form="edit-task" data-id="${t.id}" style="padding:12px;border-radius:16px;background:var(--surface)">
+    <label class="f">Qué tienes que hacer<input id="et-name" value="${esc(t.name)}"></label>
+    <div class="grid2"><label class="f">Tipo<select id="et-cat">${Object.entries(CATS).map(([k,v])=>`<option value="${k}" ${t.cat===k?'selected':''}>${v}</option>`).join('')}</select></label>
+    <label class="f">Entrega<input id="et-date" type="date" value="${t.dueDate}"></label><label class="f">Hora<input id="et-time" type="time" value="${t.dueTime||'23:59'}"></label></div>
+    <label class="f">Tu estimado (horas)<input id="et-est" inputmode="decimal" value="${(t.estMin/60).toFixed(2).replace(/\.?0+$/,'')}"></label>
+    <div class="row"><button class="primary small" type="button" data-act="submit">Guardar cambios</button><button class="small ghost" type="button" data-act="edit-task" data-id="${t.id}">Cancelar</button></div></form>`;
+}
 function vDia(){
   const P=PLAN||plan();const D=P.days[UI.day]||P.days[0];
   let h=`<div class="days">${P.days.slice(0,10).map((d,i)=>{const dd=parseKey(d.k);return `<button class="${i===UI.day?'sel':''}" data-act="pick-day" data-i="${i}"><span>${i===0?'hoy':DS[dd.getDay()]}</span><b>${dd.getDate()}</b></button>`}).join('')}</div>`;
@@ -819,7 +840,7 @@ function vDia(){
     ${D.away?`<p class="muted">Fuera de casa: ${esc(D.away.label)}. Sin clases, trabajo ni tareas.</p>`:D.vac?'<p class="muted">Día de vacaciones: sin clases ni trayectos.</p>':D.holiday?'<p class="muted">Festivo: sin clases.</p>':''}
     <div class="tl">${D.blocks.filter(b=>!(b.type==='sleep'&&b.start===0)).map(b=>blockRow(b,P.nowMin,UI.day===0)).join('')}</div></section>`;
   const cm=state.config.commitments;
-  h+=`<section class="card"><h3>Compromisos e imprevistos</h3>${cm.length?cm.slice().sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(c=>`<div class="row" style="justify-content:space-between"><span><b>${esc(c.label)}</b>${c.open&&!c.done?' <span class="pill p-ej">Estimado</span>':''} <span class="muted">${c.endDate?`${shortDate(c.date)} ${c.start} → ${shortDate(c.endDate)} ${c.end}`:`${c.repeat==='weekly'?'cada '+DN[dow(c.date)]:shortDate(c.date)} · ${c.start}–${c.end}`}</span></span><button class="ghost small danger" data-act="del-commit" data-id="${c.id}">Quitar</button></div>`).join(''):'<p class="muted">Aún no hay. Cuando veas a tu novia, recojas a tu prima o te toque cocinar, agrégalo y el plan se reorganiza solo.</p>'}</section>`;
+  h+=`<section class="card"><h3>Compromisos e imprevistos</h3>${cm.length?cm.slice().sort((a,b)=>(a.date+a.start).localeCompare(b.date+b.start)).map(c=>`<div class="row" style="justify-content:space-between"><span><b>${esc(c.label)}</b>${c.open&&!c.done?' <span class="pill p-ej">Estimado</span>':''} <span class="muted">${c.endDate?`${shortDate(c.date)} ${c.start} → ${shortDate(c.endDate)} ${c.end}`:`${c.repeat==='weekly'?'cada '+DN[dow(c.date)]:shortDate(c.date)} · ${c.start}–${c.end}`}</span></span><span class="row" style="gap:6px"><button class="ghost small" data-act="edit-commit" data-id="${c.id}">Editar</button><button class="ghost small danger" data-act="del-commit" data-id="${c.id}">Quitar</button></span></div>${UI.editCommit===c.id?commitEditForm(c):''}`).join(''):'<p class="muted">Aún no hay. Cuando veas a tu novia, recojas a tu prima o te toque cocinar, agrégalo y el plan se reorganiza solo.</p>'}</section>`;
   return h;
 }
 
@@ -855,6 +876,7 @@ function taskItem(t,P){
   let extra='';
   if(UI.finishing===t.id){extra=`<form class="row" data-form="finish" data-id="${t.id}"><label class="f">¿Cuánto te tomó en total? (horas)<input id="fin-${t.id}" type="text" inputmode="decimal" value="${(Math.max(sp,t.estMin)/60).toFixed(2)}"></label><button class="primary" type="button" data-act="submit">Guardar</button></form>`}
   if(UI.adjusting===t.id){extra=`<form class="row" data-form="adjust" data-id="${t.id}"><label class="f">¿Cuánto te falta de verdad? (horas)<input id="adj-${t.id}" type="text" inputmode="decimal" value="${(I.need/60).toFixed(2)}"></label><button class="primary" type="button" data-act="submit">Recalcular</button></form>`}
+  if(UI.editTask===t.id){extra=taskEditForm(t)}
   if(UI.waiting===t.id){extra=`<form class="row" data-form="waiting" data-id="${t.id}"><label class="f">¿A quién esperas?<input id="wait-${t.id}" autocomplete="off" placeholder="Ej: mi compañera" value="${esc(t.waitingFor||'')}"></label><button class="primary" type="button" data-act="submit">Guardar</button></form>`}
   const active=state.tasks.active&&state.tasks.active.taskId===t.id;
   return `<div class="task">
@@ -867,6 +889,7 @@ function taskItem(t,P){
     ${I.status==='riesgo'?`<span class="danger">Faltan ${dur(I.short)} de espacio. Empieza ya o pide más plazo.</span>`:''}
     <div class="row">${active?'<button class="small primary" data-act="stop">Pausar</button>':`<button class="small" data-act="start" data-id="${t.id}">Empezar</button>`}
       <button class="small" data-act="finish" data-id="${t.id}">Terminé</button>
+      <button class="small" data-act="edit-task" data-id="${t.id}">Editar</button>
       <button class="small" data-act="adjust" data-id="${t.id}">Me falta otra cantidad</button>
       ${t.waitingFor?'':`<button class="small" data-act="wait" data-id="${t.id}">Espero a alguien</button>`}
       <button class="small ghost danger" data-act="del-task" data-id="${t.id}">${UI.confirmDel===t.id?'¿Seguro? Borrar':'Borrar'}</button></div>
@@ -1691,6 +1714,9 @@ document.addEventListener('click',e=>{
     case 'sh-dur':UI.sheet.label=document.getElementById('c-label').value;UI.sheet.durMin=(el.dataset.v==='night'||el.dataset.v==='open')?el.dataset.v:+el.dataset.v;renderSheet();break;
     case 'sh-open':{const sh=UI.sheet;sh.label=document.getElementById('c-label').value;sh.open=el.checked;sh.keep={date:document.getElementById('c-date').value,start:document.getElementById('c-start').value,end:document.getElementById('c-end').value};renderSheet();
       const k=sh.keep;if(k){document.getElementById('c-date').value=k.date;document.getElementById('c-start').value=k.start;document.getElementById('c-end').value=k.end}break}
+    case 'edit-commit':UI.editCommit=UI.editCommit===id?null:id;render();break;
+    case 'edit-commit-go':UI.editCommit=id;if(location.hash!=='#dia'){location.hash='dia'}else render();setTimeout(()=>{const f=document.querySelector('[data-form="edit-commit"]');if(f)f.scrollIntoView({block:'center'})},80);break;
+    case 'edit-task':UI.editTask=UI.editTask===id?null:id;UI.adjusting=null;UI.finishing=null;UI.waiting=null;render();break;
     case 'del-commit':state.config.commitments=state.config.commitments.filter(c=>c.id!==id);save('config');render();toast('Compromiso quitado. Recalculé.');break;
     case 'reg-prev':UI.regDay++;render();break;
     case 'reg-next':UI.regDay=Math.max(0,UI.regDay-1);render();break;
@@ -1746,6 +1772,21 @@ function handleForm(f){
   }else if(f.dataset.form==='finish'){
     const id=f.dataset.id;const t=state.tasks.items.find(x=>x.id===id);const h=num(document.getElementById('fin-'+id).value)||0;
     markDone(t,h*60);UI.finishing=null;save('tasks');render();toast(t.example?'Tarea de ejemplo terminada.':'Anotado. Con esto ajusto tus próximos cálculos.');
+  }else if(f.dataset.form==='edit-commit'){
+    const c=state.config.commitments.find(x=>x.id===f.dataset.id);if(!c)return;
+    const g=id=>{const e=document.getElementById(id);return e?e.value:''};
+    const nc={label:g('ec-label').trim()||c.label,date:g('ec-date')||c.date,start:g('ec-start')||c.start,end:g('ec-end')||c.end};
+    if(c.endDate){nc.endDate=g('ec-enddate')||c.endDate;if(nc.endDate<nc.date)return toast('El día de regreso debe ser igual o después del de salida.')}
+    else{if(toMin(nc.end)<=toMin(nc.start))return toast('La hora final debe ser después de la inicial.');const w=document.getElementById('ec-weekly');nc.repeat=w&&w.checked?'weekly':'none'}
+    if(c.open&&!c.done){nc.open=true}
+    Object.assign(c,nc);UI.editCommit=null;save('config');render();toast('Cambios guardados. Reacomodé tu plan.');
+  }else if(f.dataset.form==='edit-task'){
+    const t=state.tasks.items.find(x=>x.id===f.dataset.id);if(!t)return;
+    const name=document.getElementById('et-name').value.trim(),date=document.getElementById('et-date').value,est=num(document.getElementById('et-est').value);
+    if(!name)return toast('Escribe el nombre de la tarea.');if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return toast('Elige la fecha de entrega.');if(!(est>0))return toast('Escribe cuántas horas crees que te toma.');
+    const newEst=Math.max(15,Math.round(est*60));if(newEst!==t.estMin){delete t.leftOverride;delete t.overrideSpent}
+    Object.assign(t,{name,cat:document.getElementById('et-cat').value,dueDate:date,dueTime:document.getElementById('et-time').value||'23:59',estMin:newEst});
+    UI.editTask=null;save('tasks');render();toast('Tarea actualizada. Recalculé el plan.');
   }else if(f.dataset.form==='waiting'){
     const id=f.dataset.id;const t=state.tasks.items.find(x=>x.id===id);const who=document.getElementById('wait-'+id).value.trim()||'alguien';
     t.waitingFor=who;t.waitingSince=dkey(new Date());UI.waiting=null;save('tasks');render();toast(`Anotado. Hoy no te pongo bloques; escríbele a ${who}.`);

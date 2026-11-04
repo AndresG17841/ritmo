@@ -77,6 +77,7 @@ async function pullAll(first){
     applyDoc(r.name,r.data);lsSet(r.name,state[r.name]);store.lastWrite[r.name]=r.updated_at;
   }
   setSync('on','Sincronizado');
+  if(typeof pruneCommitments==='function'&&pruneCommitments())save('config');
   if(first)render();else softRender();
 }
 async function importBackup(file){
