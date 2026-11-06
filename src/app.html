@@ -450,7 +450,7 @@ const num=v=>{const x=parseFloat(String(v==null?'':v).replace(',','.'));return i
 
 const DEFAULTS={
   settings:{
-    wakeWeekday:'06:30',wakeWeekend:'07:30',morningMin:60,restAfterU:45,homeGapMin:180,bringLunch:false,bed:'22:30',screensOff:'22:00',
+    wakeWeekday:'06:30',wakeWeekend:'07:30',morningMin:55,morningFast:30,restAfterU:45,homeGapMin:180,bringLunch:false,bed:'22:30',screensOff:'22:00',
     commuteMin:20,commuteBuffer:10,freeMin:120,freeMinWeekend:180,freeStart:'20:00',
     lunchMin:60,dinnerMin:60,maxWork:240,maxWorkHeavy:120,chunkMax:90,breakMin:15,
     margin:1.5,bufferHours:24,
@@ -557,11 +557,12 @@ function dayLayout(k,cfg,journal,clipFrom,lvl){
    const cls=(vac||holiday||away)?[]:cfg.schedule.filter(c=>+c.day===d).map(c=>toMin(c.start));
    if(cls.length)firstOut=Math.min(...cls)-C;
    if(job.on&&d===+job.day&&!(vac&&job.pauseOnVacation)&&!away&&toMin(job.end)>toMin(job.start)){const jo=toMin(job.start)-(+job.commute||0);firstOut=firstOut==null?jo:Math.min(firstOut,jo)}
-   if(firstOut!=null)wake=Math.max(240,Math.min(wake,firstOut-(+S.morningMin)));}
-  const routineEnd=wake+(+S.morningMin);
+   var mm=+S.morningMin===60?55:+S.morningMin,mf=Math.min(mm,+S.morningFast||30),fast=false;
+   if(firstOut!=null){wake=Math.max(240,Math.min(wake,firstOut-mf));if(firstOut-wake<mm){mm=Math.max(mf,firstOut-wake);fast=true}}}
+  const routineEnd=wake+mm;
   const B=[];
   B.push({start:0,end:wake,type:'sleep',title:'Dormir'});
-  if(!away)B.push({start:wake,end:routineEnd,type:'routine',title:'Arrancar el día',sub:'Desayuno y alistarte sin afán'});
+  if(!away)B.push({start:wake,end:routineEnd,type:'routine',title:'Arrancar el día',sub:fast?`Modo rápido: desayuno y baño en ${mm} min`:'Desayuno (30–40 min) y baño (15 min)'});
   let classMin=0,atUni=[];
   const classes=(vac||holiday||away)?[]:cfg.schedule.filter(c=>+c.day===d).map(c=>({start:toMin(c.start),end:toMin(c.end),name:c.name,room:c.room})).sort((a,b)=>a.start-b.start);
   for(const c of classes){classMin+=c.end-c.start;B.push({start:c.start,end:c.end,type:'class',title:c.name,sub:c.room||''})}
@@ -685,7 +686,9 @@ function buildPlanPass(state,now,quota,wl,we){
         const cand=tasks.filter(x=>x.left>0&&x.dl>abs&&!(x.t.waitingFor&&i===0)&&!(x.t.atHome&&ch.loc==='En la U')&&(!wk||(quota&&(quota[x.id]||0)>0))).sort((a,b)=>a.tgt-b.tgt||a.dl-b.dl);
         if(!cand.length)break;
         const x=cand[0];
-        let len=Math.max(5,Math.min(e-s,x.left,x.dl-abs));if(wk){len=Math.max(5,Math.min(len,quota[x.id]));quota[x.id]-=len}
+        let len=Math.max(5,Math.min(e-s,x.left,x.dl-abs));
+        {const rem=x.left-len,pz=rem>0&&rem<=20&&s+len===e&&L.open.find(o=>o[2]==='pausa'&&o[0]===e&&o[1]-o[0]>=rem);
+         if(pz&&e+rem<=x.dl-i*1440){len+=rem;pz[0]+=rem}}if(wk){len=Math.max(5,Math.min(len,quota[x.id]));quota[x.id]-=len}
         L.blocks.push({start:s,end:s+len,type:'task',title:x.t.name,sub:ch.loc,taskId:x.id});
         x.sessions.push({k,start:s,end:s+len});
         x.left=Math.max(0,x.left-len);x.lastEnd=abs+len;s+=len;
