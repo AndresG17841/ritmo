@@ -641,6 +641,12 @@ function dayLayout(k,cfg,journal,clipFrom){
 }
 
 function buildPlan(state,now){
+  // Fines de semana libres: primero planeo solo entre semana; lo que no alcance (obligatorio) va al fin de semana.
+  const dry=buildPlanPass(state,now,null);
+  const quota={};for(const id in dry.info){if(dry.info[id].short>0)quota[id]=dry.info[id].short}
+  return Object.keys(quota).length?buildPlanPass(state,now,quota):dry;
+}
+function buildPlanPass(state,now,quota){
   const cfg=state.config,S=cfg.settings,today=dkey(now);
   const nowMin=now.getHours()*60+now.getMinutes(),nowMs=now.getTime();
   const all=state.tasks.items||[],active=state.tasks.active;
@@ -662,10 +668,11 @@ function buildPlan(state,now){
       let s=ch.start;const e=ch.end;
       while(e-s>=15){
         const abs=i*1440+s;
-        const cand=tasks.filter(x=>x.left>0&&x.dl>abs&&!(x.t.waitingFor&&i===0)&&!(x.t.atHome&&ch.loc==='En la U')).sort((a,b)=>a.tgt-b.tgt||a.dl-b.dl);
+        const wk=L.weekend;
+        const cand=tasks.filter(x=>x.left>0&&x.dl>abs&&!(x.t.waitingFor&&i===0)&&!(x.t.atHome&&ch.loc==='En la U')&&(!wk||(quota&&(quota[x.id]||0)>0))).sort((a,b)=>a.tgt-b.tgt||a.dl-b.dl);
         if(!cand.length)break;
         const x=cand[0];
-        const len=Math.max(5,Math.min(e-s,x.left,x.dl-abs));
+        let len=Math.max(5,Math.min(e-s,x.left,x.dl-abs));if(wk){len=Math.max(5,Math.min(len,quota[x.id]));quota[x.id]-=len}
         L.blocks.push({start:s,end:s+len,type:'task',title:x.t.name,sub:ch.loc,taskId:x.id});
         x.sessions.push({k,start:s,end:s+len});
         x.left=Math.max(0,x.left-len);x.lastEnd=abs+len;s+=len;
