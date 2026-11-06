@@ -655,14 +655,14 @@ function dayLayout(k,cfg,journal,clipFrom,lvl){
     while(b-cur>=40&&cap>=40){
       if(run>140){const r=Math.min(60,b-cur);open.push([cur,cur+r,'descanso']);cur+=r;run=0;if(b-cur<40)break}
       // reparto parejo: bloques del mismo tamaño que llenan todo el hueco (sin sobras raras)
-      const Lr=b-cur,brk=+S.breakMin,cm=+S.chunkMax,n=Math.max(1,Math.ceil((Lr+brk)/(cm+brk)));
+      const Lr=b-cur,brk=0,cm=+S.chunkMax,n=Math.max(1,Math.ceil((Lr+brk)/(cm+brk)));
       const even=Math.max(40,Math.floor((Lr-(n-1)*brk)/n/5)*5);
-      const len=Math.min(even,b-cur,cap,180-run);
+      const len=Math.min(b-cur,cap,180-run); // un solo bloque hasta completar 3 h
       chunks.push({start:cur,end:cur+len,loc:inUni(cur,cur+len)?'En la U':''});
       cap-=len;cur+=len;run+=len;lastEnd=cur;
       if(run>=180){const r=Math.min(60,b-cur);if(r>0)open.push([cur,cur+r,'descanso']);cur+=r;run=0;continue}
       if(b-cur<40)break;
-      const br=Math.min(+S.breakMin,b-cur);
+      const br=0; // sin pausas cortas: el descanso es el de 3 h y tu tiempo libre
       if(br>0){open.push([cur,cur+br,'pausa']);cur+=br}
     }
     if(b-cur>=15)open.push([cur,b]);
@@ -721,6 +721,9 @@ function buildPlanPass(state,now,quota,wl,we){
         if(e-s<15)break;
       }
     }
+    // une bloques seguidos de la misma tarea
+    {const tb=L.blocks.filter(b=>b.type==='task').sort((p,q)=>p.start-q.start);
+     for(let j=tb.length-1;j>0;j--){const p=tb[j-1],q=tb[j];if(p.taskId===q.taskId&&p.end===q.start){p.end=q.end;L.blocks.splice(L.blocks.indexOf(q),1)}}}
     for(const o of L.open)if(o[2]==='descanso'&&L.blocks.some(b=>b.type==='task'&&b.end===o[0])&&!L.blocks.some(b=>b.type==='meal'&&b.start===o[1]))L.blocks.push({start:o[0],end:o[1],type:'pause',title:'Descanso largo',sub:'Llevas 3 h trabajando: levántate, come algo, sal un rato'});
     for(const[a,b]of freeIntervals(L.blocks,Math.max(L.routineEnd,i===0?Math.ceil(nowMin/5)*5:0),L.screens)){if(b-a>=20)L.blocks.push({start:a,end:b,type:'open',title:'Tiempo tuyo',sub:'Nada planeado'})}
     L.blocks.sort((a,b)=>a.start-b.start||a.end-b.end);
@@ -1280,7 +1283,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 18:30</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 18:34</p>`;
   return h;
 }
 function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
