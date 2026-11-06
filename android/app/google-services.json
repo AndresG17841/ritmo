@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "835295157928",
+    "project_id": "ritmo-app-783bd",
+    "storage_bucket": "ritmo-app-783bd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:835295157928:android:6c6fab7ccc78084a3bac9d",
+        "android_client_info": {
+          "package_name": "co.ritmo.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDN8Yy81aRNAWTOeg-hkcchXS9VKtvS4EI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
