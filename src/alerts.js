@@ -14,6 +14,8 @@ function alertsFor(P,di){
     if(b.type==='wind')out.push({key:'wind',at:b.start,kind:'wind',big:true,title:'Pantallas fuera',body:`A las ${fmt(b.end)} a la cama. Lo de mañana ya está en el plan.`,end:b.end,buttons:[['ok','Entendido'],['shutdown',`Apagar el PC a las ${fmt(b.end)}`],['snooze10','En 10 min']]});
     if(b.type==='sleep'&&b.start>0)out.push({key:'bed',at:b.start,kind:'bed',big:true,title:'A la cama',body:'Ya es hora de dormir. Todo lo pendiente tiene su espacio.',buttons:[['ok','Buenas noches']]});
     if(b.type==='free')out.push({key:`free:${b.start}`,at:b.start,kind:'soft',big:false,title:'Tiempo libre, sin culpa',body:`Este rato es tuyo, hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
+    if(b.type==='meal')out.push({key:`meal:${b.start}`,at:b.start,kind:'soft',big:true,title:`Hora de comer: ${b.title.toLowerCase()}`,body:`${b.sub?b.sub+'. ':''}Tienes hasta las ${fmt(b.end)}. Deja lo que estás haciendo y come bien.`,buttons:[['ok','Voy a comer'],['snooze10','En 10 min']]});
+    if(b.type==='pause')out.push({key:`pause:${b.start}`,at:b.start,kind:'soft',big:true,title:'Descanso largo',body:`Llevas 3 horas trabajando. Descansa hasta las ${fmt(b.end)}: levántate, toma agua, come algo.`,buttons:[['ok','Descanso'],['snooze10','Termino en 10 min']]});
     if(b.type==='rest')out.push({key:`rest:${b.start}`,at:b.start,kind:'soft',big:false,title:'Descanso al llegar',body:`No tienes que hacer nada hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
   }
   for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:false,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min']]});

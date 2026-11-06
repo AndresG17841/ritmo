@@ -691,6 +691,7 @@ function buildPlanPass(state,now,quota,wl,we){
         if(e-s<25)break;
       }
     }
+    for(const o of L.open)if(o[2]==='descanso'&&L.blocks.some(b=>b.type==='task'&&b.end===o[0]))L.blocks.push({start:o[0],end:o[1],type:'pause',title:'Descanso largo',sub:'Llevas 3 h trabajando: levántate, come algo, sal un rato'});
     for(const[a,b]of freeIntervals(L.blocks,Math.max(L.routineEnd,i===0?Math.ceil(nowMin/5)*5:0),L.screens)){if(b-a>=20)L.blocks.push({start:a,end:b,type:'open',title:'Tiempo tuyo',sub:'Nada planeado'})}
     L.blocks.sort((a,b)=>a.start-b.start||a.end-b.end);
     L.pings=habitPings(L,cfg);
