@@ -635,6 +635,7 @@ function dayLayout(k,cfg,journal,clipFrom,lvl){
       const len=Math.min(+S.chunkMax,b-cur,cap,Math.max(25,180-run));
       chunks.push({start:cur,end:cur+len,loc:inUni(cur,cur+len)?'En la U':''});
       cap-=len;cur+=len;run+=len;lastEnd=cur;
+      if(run>=180){const r=Math.min(60,b-cur);if(r>0)open.push([cur,cur+r,'descanso']);cur+=r;run=0;continue}
       const br=Math.min(+S.breakMin,b-cur);
       if(br>0){open.push([cur,cur+br,'pausa']);cur+=br}
     }
@@ -648,7 +649,7 @@ function buildPlan(state,now){
   // Orden: 1) lo normal entre semana, 2) sin tope diario, 3) usar tiempo libre,
   // 4) fin de semana (solo lo que falte), 5) correr el dormir como último recurso.
   const short=P=>{const q={};for(const id in P.info)if(P.info[id].short>0)q[id]=P.info[id].short;return q};
-  const stages=[[0,-1],[1,-1],[2,-1],[2,0],[2,1],[2,2],[3,3]];
+  const stages=[[1,-1],[2,-1],[2,0],[2,1],[2,2],[3,3]]; // entre semana siempre llena los huecos (sin tope), salvo si marcas que estás agotado
   let P=null,base=null;
   for(const[wl,we]of stages){
     if(we>=0&&base===null)base=short(P);
@@ -691,7 +692,7 @@ function buildPlanPass(state,now,quota,wl,we){
         if(e-s<25)break;
       }
     }
-    for(const o of L.open)if(o[2]==='descanso'&&L.blocks.some(b=>b.type==='task'&&b.end===o[0]))L.blocks.push({start:o[0],end:o[1],type:'pause',title:'Descanso largo',sub:'Llevas 3 h trabajando: levántate, come algo, sal un rato'});
+    for(const o of L.open)if(o[2]==='descanso'&&L.blocks.some(b=>b.type==='task'&&b.end===o[0])&&!L.blocks.some(b=>b.type==='meal'&&b.start===o[1]))L.blocks.push({start:o[0],end:o[1],type:'pause',title:'Descanso largo',sub:'Llevas 3 h trabajando: levántate, come algo, sal un rato'});
     for(const[a,b]of freeIntervals(L.blocks,Math.max(L.routineEnd,i===0?Math.ceil(nowMin/5)*5:0),L.screens)){if(b-a>=20)L.blocks.push({start:a,end:b,type:'open',title:'Tiempo tuyo',sub:'Nada planeado'})}
     L.blocks.sort((a,b)=>a.start-b.start||a.end-b.end);
     L.pings=habitPings(L,cfg);
