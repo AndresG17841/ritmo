@@ -56,6 +56,7 @@ head='''<!doctype html>
 <link rel="apple-touch-icon" href="icon.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <script src="vendor/supabase.js"></script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
 </head><body>
 '''
 s=head+s+'\n</body></html>\n'
@@ -65,4 +66,5 @@ shutil.copy(os.path.join(HERE,'vendor/supabase.js'),os.path.join(out,'vendor/sup
 json.dump({"name":"Ritmo","short_name":"Ritmo","start_url":"./index.html","display":"standalone","background_color":"#0E1412","theme_color":"#1E6B5B","lang":"es","icons":[{"src":"icon.png","sizes":"512x512","type":"image/png"}]},open(os.path.join(out,'manifest.json'),'w'))
 shutil.copy(os.path.join(HERE,'desktop/icon.png'),os.path.join(out,'icon.png'))
 open(os.path.join(out,'.nojekyll'),'w').write('')
+shutil.copy(os.path.join(HERE,'src/sw.js'),os.path.join(out,'sw.js'))
 print('ok',len(s))

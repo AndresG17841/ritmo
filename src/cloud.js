@@ -11,13 +11,14 @@ Object.assign(UI.sub,(function(){try{return JSON.parse(localStorage.getItem('rit
 function lsGet(k){try{const v=localStorage.getItem(LS+k);return v?JSON.parse(v):null}catch(e){return null}}
 function lsSet(k,v){try{localStorage.setItem(LS+k,JSON.stringify(v))}catch(e){}}
 function applyDoc(name,data){
-  data=data?clone(data):data;
+  data=data?clone(data):data;if(typeof STATEV!=='undefined')STATEV++;
   if(name==='config')state.config=mergeConfig(data);
   else if(name==='tasks')state.tasks=Object.assign({items:[],active:null},data||{});
   else if(name==='journal')state.journal=Object.assign({days:{}},data||{});
   else if(name==='finance'){const d=data||{};state.finance=Object.assign(clone(FIN0),d);state.finance.split=Object.assign({},FIN0.split,d.split||{})}
 }
 function save(name){
+  if(typeof STATEV!=='undefined')STATEV++;
   lsSet(name,state[name]);
   if(!store.db)return;
   store.dirty[name]=true;
