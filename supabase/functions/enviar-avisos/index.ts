@@ -1,4 +1,5 @@
 // Ritmo: envía por push (Firebase) los avisos que ya llegaron a su hora.
+// En Supabase quedó publicada con el nombre "swift-function".
 // Corre cada minuto (lo llama pg_cron). Secrets necesarios en Supabase:
 //   FIREBASE_SERVICE_ACCOUNT = el JSON completo de la cuenta de servicio de Firebase
 //   CRON_SECRET              = una clave inventada, la misma que va en el cron

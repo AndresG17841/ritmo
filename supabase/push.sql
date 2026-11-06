@@ -35,7 +35,7 @@ create extension if not exists pg_net;
 select cron.unschedule('ritmo-enviar-avisos') where exists (select 1 from cron.job where jobname = 'ritmo-enviar-avisos');
 select cron.schedule('ritmo-enviar-avisos', '* * * * *', $$
   select net.http_post(
-    url := 'https://xjrawzqxffjbpvhfvhce.supabase.co/functions/v1/enviar-avisos',
+    url := 'https://xjrawzqxffjbpvhfvhce.supabase.co/functions/v1/swift-function',
     headers := jsonb_build_object('Content-Type', 'application/json', 'x-ritmo-cron', 'CLAVE_CRON'),
     body := '{}'::jsonb
   );
