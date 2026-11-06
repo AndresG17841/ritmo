@@ -43,7 +43,9 @@ R("/* Pestañas internas */","""/* Avisos */
 .btn{display:inline-flex;align-items:center;justify-content:center}
 /* Pestañas internas */""")
 # texts
-s=re.sub(r'Versión \d+','Ritmo · app propia',s)
+import subprocess,datetime
+VER=datetime.datetime.now(datetime.timezone(datetime.timedelta(hours=-5))).strftime('%d/%m %H:%M')
+s=re.sub(r'Versión \d+','Ritmo · versión del '+VER,s)
 R("'Sincronizado: celular y PC'","'Sincronizado'",0) if "'Sincronizado: celular y PC'" not in s else None
 # title + head wrapper
 s=s.replace('<title>Ritmo Diario</title>','',1)
@@ -57,7 +59,7 @@ head='''<!doctype html>
 <link rel="apple-touch-icon" href="icon.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <script src="vendor/supabase.js"></script>
-<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))</script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__rl){window.__rl=1;location.reload()}had=true});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{})})</script>
 </head><body>
 '''
 s=head+s+'\n</body></html>\n'
