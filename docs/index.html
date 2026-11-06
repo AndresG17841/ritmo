@@ -2004,6 +2004,7 @@ document.addEventListener('click',e=>{
     case 'logout':sb&&sb.auth.signOut();break;
     case 'export':exportBackup();break;
     case 'alert':alertAction(el.dataset.v);break;
+    case 'push-test':pushTest();break;
     case 'test-alert':showAlert({key:'test:'+Date.now(),kind:'task',big:true,title:'Toca: tarea de prueba',body:'Así se ve un aviso. Esta es solo una prueba.',buttons:[['ok','Entendido'],['snooze10','En 10 min']]});break;
     case 'ask-notif':try{Notification.requestPermission().then(()=>render())}catch(e){}break;
     case 'test-native':nativeOne({key:'test',kind:'task',big:true,title:'Toca: tarea de prueba',body:'Así te llegan los avisos de Ritmo.',buttons:[]},Date.now()+10000);toast('Bloquea el celular: en 10 segundos te llega.');break;
@@ -2231,7 +2232,7 @@ function notifPermissionCard(){
     <p>Los avisos importantes salen como <b>ventana encima de todo</b> y, con el celular bloqueado, a pantalla completa.</p>
     ${RITMO.overlay===false?'<div class="alert warn compact"><b>Falta un permiso</b><span>Para que la ventana salga encima de las otras apps.</span><button class="small primary" data-act="rp-overlay" style="align-self:flex-start">Permitir ventanas encima</button></div>':''}
     ${RITMO.notifications===false?'<p class="danger">Las notificaciones están apagadas para Ritmo.</p>':''}
-    <p class="muted">Push: ${PUSH.token?'activo ✓ (llegan aunque la app esté cerrada)':PUSH.available===false?'falta configurar Firebase':'conectando…'}</p>
+    <p class="muted">Push: ${PUSH.token?'activo ✓ (llegan aunque la app esté cerrada)':PUSH.available===false?'falta configurar Firebase':'conectando…'}</p>${PUSH.token?'<button class="small" data-act="push-test">Probar aviso push en 2 min</button>':''}
     <div class="row"><button class="small primary" data-act="rp-test">Probar en 10 segundos</button><button class="small" data-act="rp-settings">Permisos de la app</button></div>
     <p class="muted">En tu Redmi, en "Permisos de la app" activa: Inicio automático, Batería sin restricciones y, en Otros permisos, "Mostrar ventanas emergentes en segundo plano" y "Mostrar en pantalla de bloqueo".</p></section>`;
   if(LN)return `<section class="card"><h2>Avisos</h2><p>Estás en Ritmo para Android: los avisos llegan como notificaciones del celular, aunque esté bloqueado o tengas la app cerrada.</p>${NATIVE.perm&&NATIVE.perm!=='granted'?'<p class="danger">No tengo permiso para notificarte. Actívalo en Ajustes del celular → Apps → Ritmo → Notificaciones.</p>':''}<p class="muted">Para que se vean encima de todo: Ajustes del celular → Apps → Ritmo → Notificaciones → Avisos importantes → "Mostrar en pantalla" o "Ventana emergente".</p><div class="row"><button class="small" data-act="test-native">Probar en 10 segundos</button></div></section>`;
@@ -2369,7 +2370,7 @@ async function pushUpload(force){
   if(!force&&sig===PUSH.sig)return;
   PUSH.busy=true;
   try{
-    const del=await sb.from('ritmo_alerts').delete().eq('user_id',sbUser.id).is('sent_at',null).gt('at',new Date(nowMs+60000).toISOString());
+    const del=await sb.from('ritmo_alerts').delete().eq('user_id',sbUser.id).is('sent_at',null).not('key','like','test:%').gt('at',new Date(nowMs+60000).toISOString());
     if(del.error)throw del.error;
     if(rows.length){const up=await sb.from('ritmo_alerts').upsert(rows,{onConflict:'user_id,key,at',ignoreDuplicates:true});if(up.error)throw up.error}
     PUSH.sig=sig;
@@ -2384,6 +2385,13 @@ async function pushRegister(){
   }catch(e){}
 }
 if(RP){pushRegister();RP.addListener('alertAction',()=>{if(!PUSH.token)pushRegister()})}
+
+async function pushTest(){
+  if(!sb||!sbUser)return;const at=Date.now()+120000;
+  const a={key:'test:'+at,kind:'task',big:true,title:'Prueba de aviso push',body:'Si ves esto con la app cerrada, los avisos ya funcionan.',buttons:[['ok','Entendido']]};
+  const {error}=await sb.from('ritmo_alerts').insert({user_id:sbUser.id,key:a.key,at:new Date(at).toISOString(),payload:Object.assign(lite(a),{id:nId(a.key),at})});
+  toast(error?'No pude programar la prueba: '+error.message:'Listo. Cierra la app (deslízala fuera de recientes) y espera unos 2 minutos.');
+}
 
 </script>
 

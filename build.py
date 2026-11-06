@@ -24,6 +24,7 @@ R("""    case 'go':location.hash""","""    case 'login':doAuth('login');break;
     case 'logout':sb&&sb.auth.signOut();break;
     case 'export':exportBackup();break;
     case 'alert':alertAction(el.dataset.v);break;
+    case 'push-test':pushTest();break;
     case 'test-alert':showAlert({key:'test:'+Date.now(),kind:'task',big:true,title:'Toca: tarea de prueba',body:'Así se ve un aviso. Esta es solo una prueba.',buttons:[['ok','Entendido'],['snooze10','En 10 min']]});break;
     case 'ask-notif':try{Notification.requestPermission().then(()=>render())}catch(e){}break;
     case 'test-native':nativeOne({key:'test',kind:'task',big:true,title:'Toca: tarea de prueba',body:'Así te llegan los avisos de Ritmo.',buttons:[]},Date.now()+10000);toast('Bloquea el celular: en 10 segundos te llega.');break;\n    case 'rp-test':if(window.Capacitor&&RP){RP.test({seconds:10});toast('Sal de la app o bloquea el celular: en 10 segundos te llega.')}break;\n    case 'rp-overlay':if(RP)RP.openOverlaySettings();break;\n    case 'rp-settings':if(RP)RP.openAppSettings();break;\n    case 'cancel-shutdown':if(window.ritmoDesktop){window.ritmoDesktop.cancelShutdown();toast('Apagado cancelado.')}break;
