@@ -89,7 +89,7 @@ async function nativeOne(a,at){if(!LN)return;try{await LN.schedule({notification
 async function scheduleNative(force){
   if(!LN||!NATIVE.ready||UI.auth||NATIVE.busy)return;
   const P=plan();const nowMs=Date.now();const act=state.tasks.active;const list=[];
-  for(let di=0;di<2;di++){
+  for(let di=0;di<4;di++){
     const D=P.days[di];if(!D)continue;const base=parseKey(D.k).getTime();
     const done=((state.journal.days[D.k]||{}).pingDone)||{};
     for(const a of alertsFor(P,di)){
