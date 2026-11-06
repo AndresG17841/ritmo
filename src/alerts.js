@@ -20,6 +20,7 @@ function alertsFor(P,di){
   return out;
 }
 function checkAlerts(){
+  if(RP){scheduleRitmo();return}
   if(LN){scheduleNative();return}
   if(UI.auth||NOTI.current)return;
   const P=plan();const now=P.nowMin;
@@ -53,7 +54,7 @@ function showAlert(a){
 function closeAlert(){NOTI.current=null;const el=document.getElementById('popup');if(el){el.hidden=true;el.innerHTML=''}setTimeout(checkAlerts,500)}
 function alertAction(act){
   const a=NOTI.current;if(!a)return;
-  const snooze=m=>{if(LN)nativeOne(a,Date.now()+m*60000);else NOTI.snoozed.push({a,until:Date.now()+m*60000})};
+  const snooze=m=>{if(LN&&!RP)nativeOne(a,Date.now()+m*60000);else NOTI.snoozed.push({a,until:Date.now()+m*60000})};
   switch(act){
     case 'start':stopActive();state.tasks.active={taskId:a.taskId,start:Date.now()};save('tasks');if(DESK)DESK.show();location.hash='ahora';break;
     case 'cant':if(DESK)DESK.show();location.hash='ahora';setTimeout(openCommitSheet,50);break;
@@ -68,6 +69,12 @@ function alertAction(act){
 if(DESK&&DESK.onAction)DESK.onAction(({key,act})=>{if(NOTI.current&&NOTI.current.key===key)alertAction(act)});
 setInterval(checkAlerts,20000);
 function notifPermissionCard(){
+  if(RP)return `<section class="card"><h2>Avisos</h2>
+    <p>Los avisos importantes salen como <b>ventana encima de todo</b> y, con el celular bloqueado, a pantalla completa. Arriba en tus notificaciones queda la tarjeta fija <b>Ahora</b>.</p>
+    ${RITMO.overlay===false?'<div class="alert warn compact"><b>Falta un permiso</b><span>Para que la ventana salga encima de las otras apps.</span><button class="small primary" data-act="rp-overlay" style="align-self:flex-start">Permitir ventanas encima</button></div>':''}
+    ${RITMO.notifications===false?'<p class="danger">Las notificaciones están apagadas para Ritmo.</p>':''}
+    <div class="row"><button class="small primary" data-act="rp-test">Probar en 10 segundos</button><button class="small" data-act="rp-settings">Permisos de la app</button></div>
+    <p class="muted">En tu Redmi, en "Permisos de la app" activa: Inicio automático, Batería sin restricciones y, en Otros permisos, "Mostrar ventanas emergentes en segundo plano" y "Mostrar en pantalla de bloqueo".</p></section>`;
   if(LN)return `<section class="card"><h2>Avisos</h2><p>Estás en Ritmo para Android: los avisos llegan como notificaciones del celular, aunque esté bloqueado o tengas la app cerrada.</p>${NATIVE.perm&&NATIVE.perm!=='granted'?'<p class="danger">No tengo permiso para notificarte. Actívalo en Ajustes del celular → Apps → Ritmo → Notificaciones.</p>':''}<p class="muted">Para que se vean encima de todo: Ajustes del celular → Apps → Ritmo → Notificaciones → Avisos importantes → "Mostrar en pantalla" o "Ventana emergente".</p><div class="row"><button class="small" data-act="test-native">Probar en 10 segundos</button></div></section>`;
   if(DESK)return `<section class="card"><h2>Avisos</h2><p>Estás en Ritmo para Windows: los avisos salen en una ventana encima de todo, aunque tengas la app cerrada en la bandeja.</p><div class="row"><button class="small" data-act="test-alert">Probar un aviso</button><button class="small ghost" data-act="cancel-shutdown">Cancelar apagado programado</button></div></section>`;
   const p=('Notification' in window)?Notification.permission:'unsupported';
@@ -112,7 +119,7 @@ async function scheduleNative(force){
   NATIVE.busy=false;
 }
 async function nativeInit(){
-  if(!LN)return;
+  if(!LN||RP)return;
   try{
     let p=await LN.checkPermissions();if(p.display!=='granted')p=await LN.requestPermissions();
     NATIVE.perm=p.display;
@@ -133,4 +140,52 @@ async function nativeInit(){
     document.addEventListener('visibilitychange',()=>{if(!document.hidden)scheduleNative(true)});
   }catch(e){console.warn('avisos',e)}
 }
+
+/* ----- Android con avisos propios de Ritmo (ventana encima, pantalla completa, tarjeta "Ahora") ----- */
+const RP=CAPN&&CAPN.isPluginAvailable&&CAPN.isPluginAvailable('Ritmo')?(CAPN.Plugins&&CAPN.Plugins.Ritmo)||(CAPN.registerPlugin&&CAPN.registerPlugin('Ritmo')):null;
+const RITMO={sig:'',busy:false,overlay:null,notifications:null};
+function ritmoPayload(){
+  const P=plan();const nowMs=Date.now();const act=state.tasks.active;const alerts=[],timeline=[];
+  for(let di=0;di<4;di++){
+    const D=P.days[di];if(!D)continue;const base=parseKey(D.k).getTime();
+    const done=((state.journal.days[D.k]||{}).pingDone)||{};
+    for(const a of alertsFor(P,di)){
+      const at=base+a.at*60000;if(at<=nowMs+15000)continue;
+      if(a.onlyIfActive&&!(act&&act.taskId===a.onlyIfActive))continue;
+      if(a.kind==='task'&&act&&act.taskId===a.taskId&&di===0)continue;
+      if(a.kind==='ping'&&done[a.pingId]>=a.pingMin)continue;
+      alerts.push(Object.assign(lite(a),{id:nId(a.key),at,buttons:(a.buttons||[]).filter(b=>b[0]!=='shutdown')}));
+    }
+    if(di<2)for(const b of D.blocks){if(b.type==='sleep'&&b.start===0&&di===0)continue;if(b.type==='open')continue;timeline.push({start:base+b.start*60000,end:base+b.end*60000,title:b.title,type:b.type,prio:prio(b)})}
+  }
+  if(act){const t=state.tasks.items.find(x=>x.id===act.taskId);timeline.push({start:act.start,end:Math.max(nowMs+60000,act.start+90*60000),title:'Trabajando: '+(t?t.name:'tarea'),type:'task',prio:20})}
+  return {alerts,timeline};
+}
+async function scheduleRitmo(force){
+  if(!RP||UI.auth||RITMO.busy)return;
+  const pl=ritmoPayload();const sig=JSON.stringify([pl.alerts.map(a=>[a.id,a.at,a.title]),pl.timeline.map(b=>[b.start,b.end,b.title])]);
+  if(!force&&sig===RITMO.sig)return;
+  RITMO.busy=true;try{await RP.sync(pl);RITMO.sig=sig}catch(e){console.warn('ritmo',e)}RITMO.busy=false;
+}
+async function ritmoPending(){
+  if(!RP)return;
+  if(UI.auth||!sbUser){setTimeout(ritmoPending,2000);return}
+  let r;try{r=await RP.takePending()}catch(e){return}
+  for(const p of (r&&r.actions)||[]){
+    if(!p||!p.act)continue;
+    if(p.act==='open'){location.hash='ahora';continue}
+    NOTI.current=p.alert||{key:p.key};alertAction(p.act);
+  }
+}
+async function ritmoStatus(){if(!RP)return;try{const s=await RP.status();RITMO.overlay=s.overlay;RITMO.notifications=s.notifications}catch(e){}}
+async function ritmoInit(){
+  if(!RP)return;
+  try{if(LN){const pend=await LN.getPending();if(pend.notifications&&pend.notifications.length)await LN.cancel({notifications:pend.notifications.map(n=>({id:n.id}))})}}catch(e){}
+  try{if(LN){const p=await LN.checkPermissions();if(p.display!=='granted')await LN.requestPermissions()}}catch(e){}
+  await ritmoStatus();
+  RP.addListener('alertAction',()=>ritmoPending());
+  document.addEventListener('visibilitychange',()=>{if(!document.hidden){ritmoPending();ritmoStatus().then(()=>{if(UI.tab==='ajustes')render()});scheduleRitmo(true)}});
+  ritmoPending();scheduleRitmo(true);
+}
+ritmoInit();
 nativeInit();
