@@ -540,7 +540,8 @@ function habitPings(L,cfg){
   return out.sort((a,b)=>a.min-b.min);
 }
 function planCfg(state){return Object.assign({},state.config,{_trips:(state.journal&&state.journal.commutes)||[]})}
-function dayLayout(k,cfg,journal,clipFrom){
+function dayLayout(k,cfg,journal,clipFrom,lvl){
+  lvl=lvl||0; // 0 normal · 1 sin tope diario · 2 también usa el tiempo libre · 3 corre el dormir (último recurso)
   const S=cfg.settings,d=dow(k);
   const vac=!!(S.vacation.on&&S.vacation.from&&S.vacation.to&&k>=S.vacation.from&&k<=S.vacation.to);
   const holiday=(S.holidays||[]).includes(k);
@@ -551,7 +552,7 @@ function dayLayout(k,cfg,journal,clipFrom){
   const goMin=Lida?Lida.min:+S.commuteMin,backMin=Lvta?Lvta.min:+S.commuteMin;
   const C=goMin+(+S.commuteBuffer);
   let wake=toMin(relaxed?S.wakeWeekend:S.wakeWeekday);
-  const bed=toMin(S.bed),screens=Math.min(toMin(S.screensOff),bed);
+  const bed=toMin(S.bed)+(lvl>=3?60:0),screens=lvl>=3?bed-15:Math.min(toMin(S.screensOff),bed);
   {const job=S.job;let firstOut=null;
    const cls=(vac||holiday||away)?[]:cfg.schedule.filter(c=>+c.day===d).map(c=>toMin(c.start));
    if(cls.length)firstOut=Math.min(...cls)-C;
@@ -619,19 +620,21 @@ function dayLayout(k,cfg,journal,clipFrom){
   if(dinner)B.push({start:dinner[0],end:dinner[1],type:'meal',title:'Cena',sub:'Si te toca cocinar, aquí cabe'});
   const fm=relaxed?+S.freeMinWeekend:+S.freeMin;
   const free=placeFlex(B,routineEnd,screens,[fm,Math.round(fm*.75/15)*15,60,30],routineEnd,screens,toMin(S.freeStart));
-  if(free)B.push({start:free[0],end:free[1],type:'free',title:'Tiempo libre',sub:'Protegido: nada de trabajo aquí'});
+  if(free&&lvl<2)B.push({start:free[0],end:free[1],type:'free',title:'Tiempo libre',sub:'Protegido: nada de trabajo aquí'});
   // bloques disponibles para tareas
   const tired=!!(journal&&journal[k]&&journal[k].tired);
-  let cap=tired?60:(classMin>=300?+S.maxWorkHeavy:+S.maxWork);
+  let cap=tired?60:(classMin>=300?+S.maxWorkHeavy:+S.maxWork);if(lvl>=1&&!tired)cap=1e9;
   const lo=Math.max(routineEnd,clipFrom==null?0:Math.ceil(clipFrom/5)*5);
   const iv=freeIntervals(B,lo,screens);
   const chunks=[],open=[];
+  let run=0,lastEnd=-999; // trabajo seguido: tras 3 h, 1 h de descanso
   for(const[a,b]of iv){
-    let cur=a;
+    let cur=a;if(cur-lastEnd>=30)run=0;
     while(b-cur>=25&&cap>=25){
-      const len=Math.min(+S.chunkMax,b-cur,cap);
+      if(run>=180){const r=Math.min(60,b-cur);open.push([cur,cur+r,'descanso']);cur+=r;run=0;if(b-cur<25)break}
+      const len=Math.min(+S.chunkMax,b-cur,cap,Math.max(25,180-run));
       chunks.push({start:cur,end:cur+len,loc:inUni(cur,cur+len)?'En la U':''});
-      cap-=len;cur+=len;
+      cap-=len;cur+=len;run+=len;lastEnd=cur;
       const br=Math.min(+S.breakMin,b-cur);
       if(br>0){open.push([cur,cur+br,'pausa']);cur+=br}
     }
@@ -642,11 +645,19 @@ function dayLayout(k,cfg,journal,clipFrom){
 
 function buildPlan(state,now){
   // Fines de semana libres: primero planeo solo entre semana; lo que no alcance (obligatorio) va al fin de semana.
-  const dry=buildPlanPass(state,now,null);
-  const quota={};for(const id in dry.info){if(dry.info[id].short>0)quota[id]=dry.info[id].short}
-  return Object.keys(quota).length?buildPlanPass(state,now,quota):dry;
+  // Orden: 1) lo normal entre semana, 2) sin tope diario, 3) usar tiempo libre,
+  // 4) fin de semana (solo lo que falte), 5) correr el dormir como último recurso.
+  const short=P=>{const q={};for(const id in P.info)if(P.info[id].short>0)q[id]=P.info[id].short;return q};
+  const stages=[[0,-1],[1,-1],[2,-1],[2,0],[2,1],[2,2],[3,3]];
+  let P=null,base=null;
+  for(const[wl,we]of stages){
+    if(we>=0&&base===null)base=short(P);
+    P=buildPlanPass(state,now,we<0?null:Object.assign({},base),wl,we);
+    if(!Object.keys(short(P)).length)return P;
+  }
+  return P;
 }
-function buildPlanPass(state,now,quota){
+function buildPlanPass(state,now,quota,wl,we){
   const cfg=state.config,S=cfg.settings,today=dkey(now);
   const nowMin=now.getHours()*60+now.getMinutes(),nowMs=now.getTime();
   const all=state.tasks.items||[],active=state.tasks.active;
@@ -662,7 +673,8 @@ function buildPlanPass(state,now,quota){
   const days=[];
   for(let i=0;i<horizon;i++){
     const k=addDays(today,i);
-    const L=dayLayout(k,planCfg(state),state.journal.days,i===0?nowMin:null);
+    const dw=new Date(k+'T12:00:00').getDay(),isWk=dw===0||dw===6;
+    const L=dayLayout(k,planCfg(state),state.journal.days,i===0?nowMin:null,isWk?Math.max(0,we):wl);
     L.i=i;
     for(const ch of L.chunks){
       let s=ch.start;const e=ch.end;
