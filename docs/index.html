@@ -922,6 +922,11 @@ function vAhora(){
   if(T.lunchAtU&&now<900)chips.push(`<button class="mini-chip ${T.brings?'on':''}" data-act="lunch" data-k="${P.today}"><i>${ICON.meal}</i>${T.brings?'Llevo almuerzo':'No llevo almuerzo'}</button>`);
   const nc=next.find(b=>b.type==='commute'&&/^Ir /.test(b.title)&&b.start-now<=30);
   if(nc&&!ca)chips.push(`<span class="mini-chip warn"><i>${ICON.walk}</i>Sal a las ${fmt(nc.start)}</span>`);
+  if(!ca&&!act){
+    const cb=T.blocks.filter(b=>b.type==='commute'&&b.end>now-20&&b.start-now<=120).sort((a,b)=>a.start-b.start)[0];
+    if(cb){const ida=/^Ir /.test(cb.title);
+      chips.push(`<button class="mini-chip on" data-act="left" data-dir="${ida?'ida':'vuelta'}"><i>${ICON.walk}</i>${ida?'Ya salí de casa':'Ya salí del salón'}</button>`)}
+  }
   if(T.away)chips.push(`<span class="mini-chip calm">${esc(T.away.label)}: sin tareas</span>`);
   else if(T.vac)chips.push(`<span class="mini-chip calm">Vacaciones</span>`);
   else if(T.holiday)chips.push(`<span class="mini-chip calm">Festivo</span>`);
