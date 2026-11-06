@@ -633,7 +633,10 @@ function dayLayout(k,cfg,journal,clipFrom,lvl){
     let cur=a;if(cur-lastEnd>=30)run=0;
     while(b-cur>=25&&cap>=25){
       if(run>=180){const r=Math.min(60,b-cur);open.push([cur,cur+r,'descanso']);cur+=r;run=0;if(b-cur<25)break}
-      const len=Math.min(+S.chunkMax,b-cur,cap,Math.max(25,180-run));
+      // reparto parejo: bloques del mismo tamaño que llenan todo el hueco (sin sobras raras)
+      const Lr=b-cur,brk=+S.breakMin,cm=+S.chunkMax,n=Math.max(1,Math.ceil((Lr+brk)/(cm+brk)));
+      const even=Math.max(25,Math.floor((Lr-(n-1)*brk)/n/5)*5);
+      const len=Math.min(even,b-cur,cap,Math.max(25,180-run));
       chunks.push({start:cur,end:cur+len,loc:inUni(cur,cur+len)?'En la U':''});
       cap-=len;cur+=len;run+=len;lastEnd=cur;
       if(run>=180){const r=Math.min(60,b-cur);if(r>0)open.push([cur,cur+r,'descanso']);cur+=r;run=0;continue}
@@ -968,7 +971,7 @@ function tomorrowLine(P){
 function blockRow(b,now,isToday=true){
   const cls=isToday?(b.end<=now?'past':(b.start<=now&&b.end>now?'cur':'')):'';
   const extra=b.type==='commit'?`<span class="row" style="gap:6px;grid-column:2"><button class="ghost small" data-act="edit-commit-go" data-id="${b.cid}">Editar</button><button class="ghost small danger" data-act="del-commit" data-id="${b.cid}">Quitar</button></span>`:'';
-  return `<div class="blk ${cls}"><span class="t">${fmt(b.start)}<br>${fmt(b.end)}</span><div class="b t-${b.type}"><span class="ic" aria-hidden="true">${ICON[b.type]||ICON.open}</span><strong>${esc(b.title)}</strong>${b.sub?`<small>${esc(b.sub)}</small>`:''}${extra}</div></div>`;
+  return `<div class="blk ${cls}"><span class="t">${fmt(b.start)}<br>${fmt(b.end)}</span><div class="b t-${b.type}" style="min-height:${Math.round(Math.min(320,Math.max(56,(b.end-b.start)*1.6)))}px"><span class="ic" aria-hidden="true">${ICON[b.type]||ICON.open}</span><strong>${esc(b.title)}</strong>${b.sub?`<small>${esc(b.sub)}</small>`:''}${extra}</div></div>`;
 }
 
 function pruneTasks(){
