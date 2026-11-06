@@ -622,7 +622,8 @@ function dayLayout(k,cfg,journal,clipFrom,lvl){
   // Almuerzo: en la U solo si lo llevas; si no, al llegar a casa.
   const jd=journal&&journal[k];const brings=jd&&jd.lunch!=null?!!jd.lunch:!!S.bringLunch;
   const obst=B.filter(b=>b.type!=='rest').concat(brings?[]:atUni.map(([a,b])=>({start:a,end:b})));
-  let lunch=placeFlex(obst,routineEnd,screens,[+S.lunchMin,45,30],660,brings?900:960,750),late=false;
+  const cook=!brings&&!!(jd&&jd.cook);
+  let lunch=placeFlex(obst,routineEnd,screens,cook?[90,75,60]:[+S.lunchMin,45,30],660,brings?900:960,750),late=false;
   if(!lunch&&!brings){lunch=placeFlex(obst,routineEnd,screens,[45,30],660,1080,780);late=!!lunch}
   if(!lunch&&!brings&&atUni.some(([a,b])=>a<840&&b>690)){
     const snack=placeFlex(B,routineEnd,screens,[30,20],660,900,750);
@@ -635,7 +636,7 @@ function dayLayout(k,cfg,journal,clipFrom,lvl){
       const rem=Math.max(0,restLen-len);if(rem>=15){r.start=lunch[1];r.end=lunch[1]+rem}else B.splice(B.indexOf(r),1);
     }
     const arrived=B.some(b=>b.type==='commute'&&b.title==='Volver a casa'&&Math.abs(b.end-lunch[0])<=20);
-    B.push({start:lunch[0],end:lunch[1],type:'meal',title:late?'Almuerzo tarde':'Almuerzo',sub:inUni(lunch[0],lunch[1])?'En la U (llevas almuerzo)':arrived?'En casa, al llegar':''});
+    B.push({start:lunch[0],end:lunch[1],type:'meal',k,cook,lunchAtHome:!brings,title:late?'Almuerzo tarde':'Almuerzo',sub:inUni(lunch[0],lunch[1])?'En la U (llevas almuerzo)':arrived?'En casa, al llegar':''});
   }
   const lunchAtU=atUni.some(([a,b])=>a<840&&b>690);
   const dinner=placeFlex(B,routineEnd,screens,[+S.dinnerMin,45,30],1050,screens,1140);
@@ -649,21 +650,14 @@ function dayLayout(k,cfg,journal,clipFrom,lvl){
   const lo=Math.max(routineEnd,clipFrom==null?0:Math.ceil(clipFrom/5)*5);
   const iv=freeIntervals(B,lo,screens);
   const chunks=[],open=[];
-  let run=0,lastEnd=-999; // trabajo seguido: tras 3 h, 1 h de descanso
+  let run=0,lastEnd=-999; // trabajo seguido: tras 3 h, 15 min de pausa; las comidas reinician la cuenta
   for(const[a,b]of iv){
     let cur=a;if(cur-lastEnd>=30)run=0;
     while(b-cur>=40&&cap>=40){
-      if(run>140){const r=Math.min(60,b-cur);open.push([cur,cur+r,'descanso']);cur+=r;run=0;if(b-cur<40)break}
-      // reparto parejo: bloques del mismo tamaño que llenan todo el hueco (sin sobras raras)
-      const Lr=b-cur,brk=0,cm=+S.chunkMax,n=Math.max(1,Math.ceil((Lr+brk)/(cm+brk)));
-      const even=Math.max(40,Math.floor((Lr-(n-1)*brk)/n/5)*5);
-      const len=Math.min(b-cur,cap,180-run); // un solo bloque hasta completar 3 h
+      let len=Math.min(b-cur,cap,180-run);if(b-cur-len<55&&len<cap)len=Math.min(b-cur,cap); // si lo que queda no da para pausa + bloque, sigue hasta la comida
       chunks.push({start:cur,end:cur+len,loc:inUni(cur,cur+len)?'En la U':''});
       cap-=len;cur+=len;run+=len;lastEnd=cur;
-      if(run>=180){const r=Math.min(60,b-cur);if(r>0)open.push([cur,cur+r,'descanso']);cur+=r;run=0;continue}
-      if(b-cur<40)break;
-      const br=0; // sin pausas cortas: el descanso es el de 3 h y tu tiempo libre
-      if(br>0){open.push([cur,cur+br,'pausa']);cur+=br}
+      if(run>=180&&b-cur>=55){open.push([cur,cur+15,'pausa15']);cur+=15;run=0}
     }
     if(b-cur>=15)open.push([cur,b]);
   }
@@ -697,12 +691,12 @@ function buildPlanPass(state,now,quota,wl,we){
   });
   const maxDl=Math.max(0,...tasks.map(x=>x.dl));
   const horizon=Math.min(70,Math.max(14,Math.ceil(maxDl/1440)+1));
-  const days=[];
+  const days=[];let thread={x:null,streak:0};
   for(let i=0;i<horizon;i++){
     const k=addDays(today,i);
     const dw=new Date(k+'T12:00:00').getDay(),isWk=dw===0||dw===6;
     const L=dayLayout(k,planCfg(state),state.journal.days,i===0?nowMin:null,isWk?Math.max(0,we):wl);
-    L.i=i;
+    L.i=i;thread.streak=0;
     for(const ch of L.chunks){
       let s=ch.start;const e=ch.end;
       while(e-s>=15){
@@ -710,22 +704,34 @@ function buildPlanPass(state,now,quota,wl,we){
         const wk=L.weekend;
         const cand=tasks.filter(x=>x.left>0&&x.dl>abs&&!(x.t.waitingFor&&i===0)&&!(x.t.atHome&&ch.loc==='En la U')&&(!wk||(quota&&(quota[x.id]||0)>0))).sort((a,b)=>a.tgt-b.tgt||a.dl-b.dl);
         // Mínimo 40 min por bloque, salvo que sea lo último que le falta a la tarea.
-        const MINB=40,x=cand.find(y=>Math.min(e-s,y.left,y.dl-abs)>=MINB||(y.left<=e-s&&y.left<=y.dl-abs));
+        const MINB=40,ok=y=>Math.min(e-s,y.left,y.dl-abs)>=MINB||(y.left<=e-s&&y.left<=y.dl-abs);
+        // Seguir el hilo: la tarea empezada sigue (aunque haya almuerzo en medio) hasta llevar 3 h con ella.
+        let x=null;
+        if(thread.x&&thread.streak<180&&cand.includes(thread.x)&&ok(thread.x))x=thread.x;
+        if(!x){const others=cand.filter(y=>y!==thread.x);x=(thread.streak>=180&&others.find(ok))||cand.find(ok)}
         if(!x)break;
         let len=Math.max(5,Math.min(e-s,x.left,x.dl-abs));
-        {const rem=x.left-len,pz=rem>0&&rem<=20&&s+len===e&&L.open.find(o=>o[2]==='pausa'&&o[0]===e&&o[1]-o[0]>=rem);
-         if(pz&&e+rem<=x.dl-i*1440){len+=rem;pz[0]+=rem}}if(wk){len=Math.max(5,Math.min(len,quota[x.id]));quota[x.id]-=len}
+        if(thread.x===x&&180-thread.streak>=MINB)len=Math.min(len,180-thread.streak);
+        if(wk){len=Math.max(5,Math.min(len,quota[x.id]));quota[x.id]-=len}
         L.blocks.push({start:s,end:s+len,type:'task',title:x.t.name,sub:ch.loc,taskId:x.id});
         x.sessions.push({k,start:s,end:s+len});
         x.left=Math.max(0,x.left-len);x.lastEnd=abs+len;s+=len;
+        if(thread.x===x)thread.streak+=len;else thread={x,streak:len};
         if(e-s<15)break;
       }
     }
     // une bloques seguidos de la misma tarea
     {const tb=L.blocks.filter(b=>b.type==='task').sort((p,q)=>p.start-q.start);
      for(let j=tb.length-1;j>0;j--){const p=tb[j-1],q=tb[j];if(p.taskId===q.taskId&&p.end===q.start){p.end=q.end;L.blocks.splice(L.blocks.indexOf(q),1)}}}
-    for(const o of L.open)if(o[2]==='descanso'&&L.blocks.some(b=>b.type==='task'&&b.end===o[0])&&!L.blocks.some(b=>b.type==='meal'&&b.start===o[1]))L.blocks.push({start:o[0],end:o[1],type:'pause',title:'Descanso largo',sub:'Llevas 3 h trabajando: levántate, come algo, sal un rato'});
-    for(const[a,b]of freeIntervals(L.blocks,Math.max(L.routineEnd,i===0?Math.ceil(nowMin/5)*5:0),L.screens)){if(b-a>=20)L.blocks.push({start:a,end:b,type:'open',title:'Tiempo tuyo',sub:'Nada planeado'})}
+    for(const o of L.open)if(o[2]==='pausa15'&&L.blocks.some(b=>b.type==='task'&&b.end===o[0]))L.blocks.push({start:o[0],end:o[1],type:'pause',title:'Pausa de 15 min',sub:'Llevas 3 h: estírate, agua, y sigues'});
+    // Huecos chicos (< 40 min) pegados a una comida: se vuelven parte de la comida (vas a comer antes o te demoras más).
+    {const lo2=Math.max(L.routineEnd,i===0?Math.ceil(nowMin/5)*5:0);
+     for(const m of L.blocks.filter(b=>b.type==='meal')){
+       for(const[a,b]of freeIntervals(L.blocks,lo2,L.screens)){
+         if(b===m.start&&b-a<40){m.start=a;m.sub=(m.sub?m.sub+' · ':'')+'antes, para no dejar hueco'}
+         else if(a===m.end&&b-a<40&&b-a>0){m.end=b}
+       }}}
+    for(const[a,b]of freeIntervals(L.blocks,Math.max(L.routineEnd,i===0?Math.ceil(nowMin/5)*5:0),L.screens)){if(b-a>=20)L.blocks.push({start:a,end:b,type:'open',title:b-a<40?'Margen':'Tiempo tuyo',sub:b-a<40?'Muy corto para una tarea':'Nada pendiente que quepa aquí'})}
     L.blocks.sort((a,b)=>a.start-b.start||a.end-b.end);
     L.pings=habitPings(L,cfg);
     days.push(L);
@@ -1083,7 +1089,7 @@ function tomorrowLine(P){
 }
 function blockRow(b,now,isToday=true){
   const cls=isToday?(b.end<=now?'past':(b.start<=now&&b.end>now?'cur':'')):'';
-  const extra=b.type==='commit'?`<span class="row" style="gap:6px;grid-column:2"><button class="ghost small" data-act="edit-commit-go" data-id="${b.cid}">Editar</button><button class="ghost small danger" data-act="del-commit" data-id="${b.cid}">Quitar</button></span>`:'';
+  const extra=b.type==='meal'&&b.lunchAtHome&&b.k?`<button class="ghost small" data-act="cook" data-k="${b.k}">${b.cook?'Ya hay almuerzo hecho':'No hay almuerzo hecho (1:30)'}</button>`:b.type==='commit'?`<span class="row" style="gap:6px;grid-column:2"><button class="ghost small" data-act="edit-commit-go" data-id="${b.cid}">Editar</button><button class="ghost small danger" data-act="del-commit" data-id="${b.cid}">Quitar</button></span>`:'';
   return `<div class="blk ${cls}"><span class="t">${fmt(b.start)}<br>${fmt(b.end)}</span><div class="b t-${b.type}" style="min-height:${Math.round(Math.min(320,Math.max(56,(b.end-b.start)*1.6)))}px"><span class="ic" aria-hidden="true">${ICON[b.type]||ICON.open}</span><strong>${esc(b.title)}</strong>${b.sub?`<small>${esc(b.sub)}</small>`:''}${extra}</div></div>`;
 }
 
@@ -1283,7 +1289,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 18:34</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 18:44</p>`;
   return h;
 }
 function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
@@ -2078,6 +2084,7 @@ document.addEventListener('click',e=>{
     case 'ss-habit':readSleepInputs();UI.sheet.yh[el.dataset.v]=!UI.sheet.yh[el.dataset.v];renderSheet();break;
     case 'sleep-open':openSleepSheet(el.dataset.k);break;
     case 'htoggle':{const k=el.dataset.k;const J=state.journal.days[k]=state.journal.days[k]||{};J.habits=J.habits||{};J.habits[el.dataset.v]=!J.habits[el.dataset.v];save('journal');render();break}
+    case 'cook':{const k=el.dataset.k;const J=state.journal.days[k]=state.journal.days[k]||{};J.cook=!J.cook;save('journal');render();toast(J.cook?'Listo: te dejo 1 h 30 para cocinar y almorzar.':'Listo: almuerzo normal.');break}
     case 'lunch':{const k=el.dataset.k;const J=state.journal.days[k]=state.journal.days[k]||{};const L=dayLayout(k,planCfg(state),state.journal.days,null);J.lunch=!L.brings;save('journal');render();toast(J.lunch?'Listo: almuerzas en la U.':'Listo: te pongo el almuerzo al llegar a casa.');break}
     case 'ss-lunch':readSleepInputs();UI.sheet.lunch=el.dataset.v==='1';renderSheet();break;
     case 'topen':UI.topen=UI.topen===id?null:id;render();break;
@@ -2205,7 +2212,7 @@ function alertsFor(P,di){
     if(b.type==='sleep'&&b.start>0)out.push({key:'bed',at:b.start,kind:'bed',big:true,title:'A la cama',body:'Ya es hora de dormir. Todo lo pendiente tiene su espacio.',buttons:[['ok','Buenas noches']]});
     if(b.type==='free')out.push({key:`free:${b.start}`,at:b.start,kind:'soft',big:false,title:'Tiempo libre, sin culpa',body:`Este rato es tuyo, hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
     if(b.type==='meal')out.push({key:`meal:${b.start}`,at:b.start,kind:'soft',big:true,title:`Hora de comer: ${b.title.toLowerCase()}`,body:`${b.sub?b.sub+'. ':''}Tienes hasta las ${fmt(b.end)}. Deja lo que estás haciendo y come bien.`,buttons:[['ok','Voy a comer'],['snooze10','En 10 min']]});
-    if(b.type==='pause')out.push({key:`pause:${b.start}`,at:b.start,kind:'soft',big:true,title:'Descanso largo',body:`Llevas 3 horas trabajando. Descansa hasta las ${fmt(b.end)}: levántate, toma agua, come algo.`,buttons:[['ok','Descanso'],['snooze10','Termino en 10 min']]});
+    if(b.type==='pause')out.push({key:`pause:${b.start}`,at:b.start,kind:'soft',big:true,title:'Pausa de 15 min',body:`Llevas 3 horas seguidas. Estírate y toma agua; sigues a las ${fmt(b.end)}.`,buttons:[['ok','Listo'],['snooze10','Termino en 10 min']]});
     if(b.type==='rest')out.push({key:`rest:${b.start}`,at:b.start,kind:'soft',big:false,title:'Descanso al llegar',body:`No tienes que hacer nada hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
   }
   for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:false,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min']]});
