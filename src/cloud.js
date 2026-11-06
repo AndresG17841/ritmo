@@ -78,6 +78,7 @@ async function pullAll(first){
   }
   setSync('on','Sincronizado');
   if(typeof pruneCommitments==='function'&&pruneCommitments())save('config');
+  if(typeof pruneTasks==='function'&&pruneTasks())save('tasks');
   if(first)render();else softRender();
 }
 async function importBackup(file){

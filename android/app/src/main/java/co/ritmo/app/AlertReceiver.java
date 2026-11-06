@@ -10,6 +10,6 @@ public class AlertReceiver extends BroadcastReceiver {
     public void onReceive(Context c, Intent intent) {
         String alert = intent.getStringExtra("alert");
         if (alert == null) return;
-        NowService.start(c, NowService.ACTION_ALERT, alert);
+        try { AlertDisplay.show(c, new org.json.JSONObject(alert)); } catch (Exception ignored) { }
     }
 }

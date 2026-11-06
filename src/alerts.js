@@ -10,7 +10,7 @@ function alertsFor(P,di){
         buttons:[['start','Empiezo'],['snooze10','En 10 min'],['cant','No puedo ahora']]});
       if(t)out.push({key:`taskend:${b.taskId}:${b.end}`,at:b.end,kind:'taskend',big:false,onlyIfActive:b.taskId,title:'Se acabó el bloque',body:`${b.title}. Descansa unos minutos.`,buttons:[['pause','Pausar y guardar'],['snooze15','Sigo 15 min más']]});
     }
-    if(b.type==='commute'&&/^Ir /.test(b.title))out.push({key:`go:${b.start}`,at:b.start-5,kind:'go',big:true,title:'Sal en 5 minutos',body:`${b.title}: si sales a las ${fmt(b.start)} llegas sin correr.`,buttons:[['left','Ya salgo'],['snooze5','En 5 min']]});
+    if(b.type==='commute'&&/^Ir /.test(b.title))out.push({key:`go:${b.start}`,at:b.start-5,kind:'go',big:true,title:'Sal en 5 minutos',body:`${b.title}: si sales a las ${fmt(b.start)} llegas sin correr.`,buttons:[['left','Ya salgo'],['snooze10','En 10 min'],['snooze20','En 20 min']]});
     if(b.type==='wind')out.push({key:'wind',at:b.start,kind:'wind',big:true,title:'Pantallas fuera',body:`A las ${fmt(b.end)} a la cama. Lo de mañana ya está en el plan.`,end:b.end,buttons:[['ok','Entendido'],['shutdown',`Apagar el PC a las ${fmt(b.end)}`],['snooze10','En 10 min']]});
     if(b.type==='sleep'&&b.start>0)out.push({key:'bed',at:b.start,kind:'bed',big:true,title:'A la cama',body:'Ya es hora de dormir. Todo lo pendiente tiene su espacio.',buttons:[['ok','Buenas noches']]});
     if(b.type==='free')out.push({key:`free:${b.start}`,at:b.start,kind:'soft',big:false,title:'Tiempo libre, sin culpa',body:`Este rato es tuyo, hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
@@ -20,6 +20,7 @@ function alertsFor(P,di){
   return out;
 }
 function checkAlerts(){
+  pushUpload();
   if(RP){scheduleRitmo();return}
   if(LN){scheduleNative();return}
   if(UI.auth||NOTI.current)return;
@@ -70,9 +71,10 @@ if(DESK&&DESK.onAction)DESK.onAction(({key,act})=>{if(NOTI.current&&NOTI.current
 setInterval(checkAlerts,20000);
 function notifPermissionCard(){
   if(RP)return `<section class="card"><h2>Avisos</h2>
-    <p>Los avisos importantes salen como <b>ventana encima de todo</b> y, con el celular bloqueado, a pantalla completa. Arriba en tus notificaciones queda la tarjeta fija <b>Ahora</b>.</p>
+    <p>Los avisos importantes salen como <b>ventana encima de todo</b> y, con el celular bloqueado, a pantalla completa.</p>
     ${RITMO.overlay===false?'<div class="alert warn compact"><b>Falta un permiso</b><span>Para que la ventana salga encima de las otras apps.</span><button class="small primary" data-act="rp-overlay" style="align-self:flex-start">Permitir ventanas encima</button></div>':''}
     ${RITMO.notifications===false?'<p class="danger">Las notificaciones están apagadas para Ritmo.</p>':''}
+    <p class="muted">Push: ${PUSH.token?'activo ✓ (llegan aunque la app esté cerrada)':PUSH.available===false?'falta configurar Firebase':'conectando…'}</p>
     <div class="row"><button class="small primary" data-act="rp-test">Probar en 10 segundos</button><button class="small" data-act="rp-settings">Permisos de la app</button></div>
     <p class="muted">En tu Redmi, en "Permisos de la app" activa: Inicio automático, Batería sin restricciones y, en Otros permisos, "Mostrar ventanas emergentes en segundo plano" y "Mostrar en pantalla de bloqueo".</p></section>`;
   if(LN)return `<section class="card"><h2>Avisos</h2><p>Estás en Ritmo para Android: los avisos llegan como notificaciones del celular, aunque esté bloqueado o tengas la app cerrada.</p>${NATIVE.perm&&NATIVE.perm!=='granted'?'<p class="danger">No tengo permiso para notificarte. Actívalo en Ajustes del celular → Apps → Ritmo → Notificaciones.</p>':''}<p class="muted">Para que se vean encima de todo: Ajustes del celular → Apps → Ritmo → Notificaciones → Avisos importantes → "Mostrar en pantalla" o "Ventana emergente".</p><div class="row"><button class="small" data-act="test-native">Probar en 10 segundos</button></div></section>`;
@@ -127,7 +129,7 @@ async function nativeInit(){
     await LN.createChannel({id:'suaves',name:'Avisos suaves',description:'Agua, descanso, tiempo libre',importance:3,visibility:1,vibration:false});
     await LN.registerActionTypes({types:[
       {id:'task',actions:[{id:'start',title:'Empiezo'},{id:'snooze10',title:'En 10 min'}]},
-      {id:'go',actions:[{id:'left',title:'Ya salgo'},{id:'snooze5',title:'En 5 min'}]},
+      {id:'go',actions:[{id:'left',title:'Ya salgo'},{id:'snooze10',title:'En 10 min'},{id:'snooze20',title:'En 20 min'}]},
       {id:'wind',actions:[{id:'ok',title:'Entendido'},{id:'snooze10',title:'En 10 min'}]},
       {id:'ping',actions:[{id:'ping-ok',title:'Listo'},{id:'snooze20',title:'En 20 min'}]},
       {id:'taskend',actions:[{id:'pause',title:'Pausar y guardar'},{id:'snooze15',title:'Sigo 15 min'}]}]});
@@ -189,3 +191,39 @@ async function ritmoInit(){
 }
 ritmoInit();
 nativeInit();
+
+/* ----- Push (Firebase): la app sube sus avisos a Supabase y el servidor los envía a su hora ----- */
+const PUSH={sig:'',busy:false,off:0,token:null};
+async function pushUpload(force){
+  if(typeof sb==='undefined'||!sb||!sbUser||UI.auth||PUSH.busy)return;
+  if(PUSH.off&&Date.now()<PUSH.off)return;
+  const P=plan();const nowMs=Date.now();const act=state.tasks.active;const rows=[];
+  for(let di=0;di<2;di++){
+    const D=P.days[di];if(!D)continue;const base=parseKey(D.k).getTime();const done=((state.journal.days[D.k]||{}).pingDone)||{};
+    for(const a of alertsFor(P,di)){
+      const at=base+a.at*60000;if(at<=nowMs+60000)continue;
+      if(a.onlyIfActive)continue;
+      if(a.kind==='task'&&act&&act.taskId===a.taskId&&di===0)continue;
+      if(a.kind==='ping'&&done[a.pingId]>=a.pingMin)continue;
+      rows.push({user_id:sbUser.id,key:a.key,at:new Date(at).toISOString(),payload:Object.assign(lite(a),{id:nId(a.key),at,buttons:(a.buttons||[]).filter(b=>b[0]!=='shutdown')})});
+    }
+  }
+  const sig=JSON.stringify(rows.map(r=>[r.key,r.at,r.payload.title]));
+  if(!force&&sig===PUSH.sig)return;
+  PUSH.busy=true;
+  try{
+    const del=await sb.from('ritmo_alerts').delete().eq('user_id',sbUser.id).is('sent_at',null).gt('at',new Date(nowMs+60000).toISOString());
+    if(del.error)throw del.error;
+    if(rows.length){const up=await sb.from('ritmo_alerts').upsert(rows,{onConflict:'user_id,key,at',ignoreDuplicates:true});if(up.error)throw up.error}
+    PUSH.sig=sig;
+  }catch(e){PUSH.off=Date.now()+10*60000}
+  PUSH.busy=false;
+}
+async function pushRegister(){
+  if(!RP||typeof sb==='undefined'||!sb){return}
+  if(!sbUser){setTimeout(pushRegister,3000);return}
+  try{const r=await RP.pushToken();PUSH.available=!!(r&&r.available);
+    if(r&&r.token){PUSH.token=r.token;await sb.from('ritmo_devices').upsert({token:r.token,user_id:sbUser.id,platform:'android',updated_at:new Date().toISOString()},{onConflict:'token'})}
+  }catch(e){}
+}
+if(RP){pushRegister();RP.addListener('alertAction',()=>{if(!PUSH.token)pushRegister()})}

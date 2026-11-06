@@ -33,7 +33,10 @@ public class RitmoPlugin extends Plugin {
         JSArray alerts = call.getArray("alerts");
         JSArray timeline = call.getArray("timeline");
         Scheduler.replaceAll(c, alerts == null ? "[]" : alerts.toString(), timeline == null ? "[]" : timeline.toString());
-        NowService.refresh(c);
+        AlertDisplay.channels(c);
+        android.app.NotificationManager nm = (android.app.NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) nm.cancel(7);
+        try { c.stopService(new Intent(c, Class.forName("co.ritmo.app.NowService"))); } catch (Exception ignored) { }
         call.resolve();
     }
 
@@ -71,6 +74,22 @@ public class RitmoPlugin extends Plugin {
         JSObject r = new JSObject();
         try { r.put("actions", new JSArray(Store.takePending(getContext()))); } catch (Exception e) { r.put("actions", new JSArray()); }
         call.resolve(r);
+    }
+
+    @PluginMethod
+    public void pushToken(PluginCall call) {
+        Context c = getContext();
+        JSObject r = new JSObject();
+        if (com.google.firebase.FirebaseApp.getApps(c).isEmpty()) { r.put("available", false); call.resolve(r); return; }
+        try {
+            com.google.firebase.messaging.FirebaseMessaging.getInstance().getToken().addOnCompleteListener(t -> {
+                JSObject o = new JSObject();
+                o.put("available", true);
+                if (t.isSuccessful() && t.getResult() != null) { o.put("token", t.getResult()); Store.put(c, "fcmToken", t.getResult()); }
+                else o.put("error", t.getException() == null ? "sin token" : t.getException().getMessage());
+                call.resolve(o);
+            });
+        } catch (Exception e) { r.put("available", false); r.put("error", e.getMessage()); call.resolve(r); }
     }
 
     @PluginMethod

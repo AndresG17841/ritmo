@@ -373,6 +373,33 @@ details.more[open] summary{margin-bottom:8px}
 .pri-alta{background:var(--risk-soft);color:var(--risk)}.pri-media{background:var(--class-soft);color:var(--class)}.pri-baja{background:var(--sunk);color:var(--muted)}.pri-sobra{background:var(--ok-soft);color:var(--ok)}
 .split4{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.split4 input{text-align:center}
 .center{text-align:center}
+/* Movimiento */
+@media (prefers-reduced-motion:no-preference){
+  .now,.hero-money,.wrap>.top{background-size:180% 180%;animation:drift 14s ease-in-out infinite alternate}
+  @keyframes drift{0%{background-position:0% 30%}100%{background-position:100% 70%}}
+  #view.anim>*{animation:rise .5s cubic-bezier(.2,.8,.2,1) both}
+  #view.anim>*:nth-child(2){animation-delay:.05s}#view.anim>*:nth-child(3){animation-delay:.1s}#view.anim>*:nth-child(4){animation-delay:.15s}
+  #view.anim>*:nth-child(5){animation-delay:.2s}#view.anim>*:nth-child(6){animation-delay:.25s}#view.anim>*:nth-child(n+7){animation-delay:.3s}
+  @keyframes rise{from{transform:translateY(14px);opacity:.35}to{transform:none;opacity:1}}
+  #view.anim .bar i,#view.anim .thin i{transform-origin:left;animation:grow .9s .15s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes grow{from{transform:scaleX(0)}to{transform:scaleX(1)}}
+  #view.anim .tl .blk{animation:slidein .45s cubic-bezier(.2,.8,.2,1) both}
+  #view.anim .tl .blk:nth-child(2){animation-delay:.06s}#view.anim .tl .blk:nth-child(3){animation-delay:.12s}#view.anim .tl .blk:nth-child(n+4){animation-delay:.18s}
+  @keyframes slidein{from{transform:translateX(-10px);opacity:.4}to{transform:none;opacity:1}}
+  .badge.b-risk{animation:pulse 2s ease-in-out infinite}
+  @keyframes pulse{0%,100%{box-shadow:0 0 0 2px var(--surface),0 0 0 0 rgba(229,72,77,.55)}50%{box-shadow:0 0 0 2px var(--surface),0 0 0 6px rgba(229,72,77,0)}}
+  .htog.on i,.chip.sel,.mini-chip.on{animation:pop .28s ease-out}
+  @keyframes pop{0%{transform:scale(.9)}60%{transform:scale(1.06)}100%{transform:scale(1)}}
+  .now.t-task .timer{animation:breathe 2.4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{text-shadow:0 0 0 rgba(255,255,255,0)}50%{text-shadow:0 0 18px rgba(255,255,255,.55)}}
+  .fab{transition:transform .2s ease}.fab:active{transform:scale(.92)}.fab svg{transition:transform .25s ease}
+  .fabmenu .list button{animation:rise .3s cubic-bezier(.2,.8,.2,1) both}
+  .fabmenu .list button:nth-child(2){animation-delay:.03s}.fabmenu .list button:nth-child(3){animation-delay:.06s}.fabmenu .list button:nth-child(4){animation-delay:.09s}.fabmenu .list button:nth-child(n+5){animation-delay:.12s}
+  .sheet{animation:sheetup .32s cubic-bezier(.2,.8,.2,1) both}
+  @keyframes sheetup{from{transform:translateY(40px);opacity:.5}to{transform:none;opacity:1}}
+  nav.tabs a{transition:background .25s ease,color .25s ease}
+  .tcard,.gcard{transition:background .2s ease}
+}
 /* Gráfica de sueño en curva */
 .wave text{font-family:var(--body);font-size:11px;fill:var(--muted)}
 .wave .today{fill:var(--ink);font-weight:700}
@@ -476,11 +503,13 @@ function placeFlex(blocks,lo,hi,durs,winA,winB,target){
   return null;
 }
 
-function factorFor(cat,tasks,S){
+function factorFor(cat,tasks,S,learn){
   const K=3;const prior=+S.margin||1.5;
   const done=tasks.filter(t=>t.done&&t.cat===cat&&t.estMin>0&&t.actualMin>0&&!t.example);
-  const sum=done.reduce((a,t)=>a+Math.min(4,Math.max(.5,t.actualMin/t.estMin)),0);
-  return {f:(prior*K+sum)/(K+done.length),n:done.length};
+  const L=(learn&&learn[cat])||{n:0,sum:0};
+  const sum=done.reduce((a,t)=>a+Math.min(4,Math.max(.5,t.actualMin/t.estMin)),0)+L.sum;
+  const n=done.length+L.n;
+  return {f:(prior*K+sum)/(K+n),n};
 }
 function spentMin(t,active,nowMs){
   let m=(t.sessions||[]).reduce((a,s)=>a+(s.min||0),0);
@@ -618,7 +647,7 @@ function buildPlan(state,now){
   const nowMin=now.getHours()*60+now.getMinutes(),nowMs=now.getTime();
   const all=state.tasks.items||[],active=state.tasks.active;
   const tasks=all.filter(t=>!t.done).map(t=>{
-    const fr=factorFor(t.cat,all,S);
+    const fr=factorFor(t.cat,all,S,state.tasks.learn);
     const dl=daysBetween(today,t.dueDate)*1440+toMin(t.dueTime||'23:59');
     const need=Math.round(remainingMin(t,fr.f,active,nowMs)/5)*5;
     const tgt=dl-nowMin>(+S.bufferHours)*60*1.5?dl-(+S.bufferHours)*60:dl;
@@ -808,6 +837,11 @@ function vAhora(){
   maybeAskSleep(P);
   return h;
 }
+function countUp(root){
+  try{if(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)return}catch(e){}
+  root.querySelectorAll('[data-count]').forEach(el=>{const to=+el.dataset.count;if(!isFinite(to)||Math.abs(to)<1)return;const t0=performance.now(),D=700;
+    const step=t=>{const k=Math.min(1,(t-t0)/D),e=1-Math.pow(1-k,3);el.textContent=money(to*e);if(k<1)requestAnimationFrame(step)};requestAnimationFrame(step)});
+}
 function badges(){
   const P=PLAN||plan();const out={};
   const pend=state.tasks.items.filter(t=>!t.done);
@@ -909,6 +943,16 @@ function blockRow(b,now,isToday=true){
   return `<div class="blk ${cls}"><span class="t">${fmt(b.start)}<br>${fmt(b.end)}</span><div class="b t-${b.type}"><span class="ic" aria-hidden="true">${ICON[b.type]||ICON.open}</span><strong>${esc(b.title)}</strong>${b.sub?`<small>${esc(b.sub)}</small>`:''}${extra}</div></div>`;
 }
 
+function pruneTasks(){
+  const lim=Date.now()-14*864e5;const T=state.tasks;const old=T.items.filter(t=>t.done&&t.doneAt&&Date.parse(t.doneAt)<lim);
+  if(!old.length)return false;
+  T.learn=T.learn||{};T.stats=T.stats||{done:0,onTime:0};
+  for(const t of old){
+    if(t.estMin>0&&t.actualMin>0&&!t.example){const L=T.learn[t.cat]=T.learn[t.cat]||{n:0,sum:0};L.n++;L.sum+=Math.min(4,Math.max(.5,t.actualMin/t.estMin))}
+    if(!t.example){T.stats.done++;if(!(t.doneAt.slice(0,10)>t.dueDate))T.stats.onTime++}
+  }
+  T.items=T.items.filter(t=>!old.includes(t));return true;
+}
 function pruneCommitments(){
   const today=dkey(new Date());const before=state.config.commitments.length;
   state.config.commitments=state.config.commitments.filter(c=>c.repeat==='weekly'||(c.endDate||c.date)>=today);
@@ -1044,7 +1088,7 @@ function vProgreso(){
     ${area?`<path d="${area}" fill="url(#wv)"/><path d="${line}" fill="none" stroke="url(#wl)" stroke-width="3.5" stroke-linecap="round"/>`:''}${dots}${labels}${P.length<2?`<text x="${W/2}" y="${H/2}" text-anchor="middle">Registra al menos 2 noches para ver tu curva</text>`:''}`;
   const grid='';
   const items=state.tasks.items.filter(t=>!t.example);
-  const doneT=items.filter(t=>t.done);
+  const doneT=items.filter(t=>t.done);const arch=state.tasks.stats||{done:0,onTime:0};
   const onTime=doneT.filter(t=>!(t.doneAt&&t.doneAt.slice(0,10)>t.dueDate)).length;
   const thief={};ks.forEach(k=>((D[k]||{}).thief||[]).forEach(x=>{if(x!=='Nada')thief[x]=(thief[x]||0)+1}));
   const topThief=Object.entries(thief).sort((a,b)=>b[1]-a[1])[0];
@@ -1067,9 +1111,9 @@ function vProgreso(){
        <div class="hab-week">${last7.map(k=>`<span class="hd ${has(k)?'on':''} ${k===today?'today':''}" title="${shortDate(k)}"><i></i><small>${DS[parseKey(k).getDay()].charAt(0).toUpperCase()}</small></span>`).join('')}</div>
        <div class="row" style="gap:10px"><div class="bar" style="flex:1"><i style="width:${m/30*100}%"></i></div><span class="mono muted" style="font-size:.8rem">${m}/30 días</span></div></div>`};
    h+=`<section class="card"><h2>Hábitos</h2><p class="muted">Últimos 7 días y cuántos de los últimos 30 cumpliste.</p><div class="stack" style="gap:16px">${state.config.habits.map(row).join('')}</div></section>`;}
-  const cats=Object.keys(CATS).map(c=>({c,...factorFor(c,state.tasks.items,S)})).filter(x=>x.n>0);
+  const cats=Object.keys(CATS).map(c=>({c,...factorFor(c,state.tasks.items,S,state.tasks.learn)})).filter(x=>x.n>0);
   h+=`<section class="card"><h2>Cómo calculas tus tiempos</h2>
-    <div class="stats"><div class="stat"><span class="label">Terminadas</span><b>${doneT.length}</b></div><div class="stat"><span class="label">A tiempo</span><b>${doneT.length?Math.round(onTime/doneT.length*100)+'%':'—'}</b></div></div>
+    <div class="stats"><div class="stat"><span class="label">Terminadas</span><b>${doneT.length+arch.done}</b></div><div class="stat"><span class="label">A tiempo</span><b>${doneT.length+arch.done?Math.round((onTime+arch.onTime)/(doneT.length+arch.done)*100)+'%':'—'}</b></div></div>
     ${cats.length?cats.map(x=>`<p><b>${CATS[x.c]}</b>: tardas ${x.f.toFixed(1)} veces lo que estimas <span class="muted">(${x.n} ${x.n===1?'tarea':'tareas'})</span></p>`).join(''):`<p class="muted">Cuando termines tareas usando el botón Empezar, aquí verás cuánto te desfasas por tipo de tarea. Mientras tanto uso un margen de ${(+S.margin).toFixed(1)}×.</p>`}
   </section>`;
   return h;
@@ -1535,7 +1579,7 @@ function vPlata(){
   if(sub==='resumen'){
     const E=expectedIncome();const own=ownBank();const saved=F.goals.reduce((a,g)=>a+g.saved,0);
     const rd=realDebts();const debt=rd.reduce((a,d)=>a+d.balance,0);
-    h+=`<section class="hero-money"><span class="label">Para ti, disponible</span><b class="big">${money(own)}</b>
+    h+=`<section class="hero-money"><span class="label">Para ti, disponible</span><b class="big" data-count="${Math.round(own)}">${money(own)}</b>
       <div class="hm-row"><span><small>Entró este mes</small>${money(M.inc)} <em>de ~${money(E)}</em></span><span><small>Ahorrado</small>${money(saved)}</span>${debt>0?`<span><small>Deuda</small>${money(debt)}</span>`:''}</div></section>`;
     // Por pagar
     const fx=fixedState();const rows=[];
@@ -1754,7 +1798,9 @@ function render(){
   plan();
   const v={ahora:vAhora,dia:vDia,tareas:vTareas,bien:vBien,plata:vPlata,ajustes:vAjustes}[tab]();
   document.querySelector('.gear').classList.toggle('sel',tab==='ajustes');
-  document.getElementById('view').innerHTML=v;
+  const viewEl=document.getElementById('view');viewEl.innerHTML=v;
+  const sig=tab+'|'+(tab==='plata'?UI.sub.plata:tab==='bien'?UI.sub.bien:'');
+  if(UI.lastView!==sig){UI.lastView=sig;viewEl.classList.remove('anim');void viewEl.offsetWidth;viewEl.classList.add('anim');clearTimeout(UI.animT);UI.animT=setTimeout(()=>viewEl.classList.remove('anim'),1200);countUp(viewEl)}
   tick();updatePreview();paintBadges();
 }
 function softRender(){
@@ -1769,7 +1815,7 @@ function tick(){
 function updatePreview(){
   const el=document.getElementById('t-prev');if(!el)return;
   const est=num(document.getElementById('t-est').value)||0;const cat=document.getElementById('t-cat').value;
-  const f=factorFor(cat,state.tasks.items,state.config.settings);
+  const f=factorFor(cat,state.tasks.items,state.config.settings,state.tasks.learn);
   el.textContent=est?`Con tu margen de ${f.f.toFixed(1)}× ${f.n?'(aprendido de '+f.n+' tareas)':'(mientras aprendo de ti)'} te reservo ${dur(est*60*f.f)}.`:'';
 }
 setInterval(tick,1000);

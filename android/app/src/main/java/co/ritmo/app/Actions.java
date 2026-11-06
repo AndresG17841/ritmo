@@ -12,11 +12,11 @@ final class Actions {
 
     static void handle(Context c, String key, String act, String alertJson, boolean fromActivity) {
         if (act == null) act = "ok";
-        NowService.dismissOverlay(c);
+        AlertDisplay.dismissOverlay(c);
         NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
         JSONObject a = new JSONObject();
         try { if (alertJson != null) a = new JSONObject(alertJson); } catch (Exception ignored) { }
-        if (nm != null) nm.cancel(NowService.ALERT_NOTIF_BASE + Math.abs(a.optInt("id") % 100000));
+        if (nm != null) nm.cancel(AlertDisplay.ALERT_NOTIF_BASE + Math.abs(a.optInt("id") % 100000));
         if (act.startsWith("snooze")) {
             int m = 10;
             try { m = Integer.parseInt(act.substring(6)); } catch (Exception ignored) { }
