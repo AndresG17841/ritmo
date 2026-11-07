@@ -26,7 +26,11 @@ function ackAlert(key,until){
   if(!key)return;const J=state.journal;J.acks=J.acks||{};J.acks[key]=until||1;J.acks['@'+key]=Date.now();
   const old=Date.now()-2*864e5;for(const k in J.acks)if(k[0]==='@'&&J.acks[k]<old){delete J.acks[k];delete J.acks[k.slice(1)]}
   save('journal');
-  try{if(typeof sb!=='undefined'&&sb&&sbUser)sb.from('ritmo_alerts').delete().eq('user_id',sbUser.id).eq('key',key).is('sent_at',null).then(()=>{})}catch(e){}
+  try{if(typeof sb!=='undefined'&&sb&&sbUser){
+    sb.from('ritmo_alerts').delete().eq('user_id',sbUser.id).eq('key',key).is('sent_at',null).then(()=>{});
+    // Si lo atendí aquí (PC o web), el servidor le dice al celular que quite la notificación.
+    if(!RP&&!key.startsWith('cancel:'))sb.from('ritmo_alerts').insert({user_id:sbUser.id,key:'cancel:'+key,at:new Date().toISOString(),payload:{cancel:key,id:nId(key),key:'cancel:'+key}}).then(()=>{});
+  }}catch(e){}
 }
 function acked(key){const v=(state.journal.acks||{})[key];return !!v&&(v===1||Date.now()<v)}
 function alertSync(){
@@ -72,7 +76,7 @@ function alertAction(act){
   const snooze=m=>{if(LN&&!RP)nativeOne(a,Date.now()+m*60000);else NOTI.snoozed.push({a,until:Date.now()+m*60000})};
   if(act!=='remote'){const m=/^snooze(\d+)$/.exec(act);ackAlert(a.key,m?Date.now()+(+m[1])*60000:1)}
   switch(act){
-    case 'start':stopActive();state.tasks.active={taskId:a.taskId,start:Date.now()};save('tasks');if(DESK)DESK.show();location.hash='ahora';break;
+    case 'start':if(!(state.tasks.active&&state.tasks.active.taskId===a.taskId)){stopActive();state.tasks.active={taskId:a.taskId,start:Date.now()};save('tasks')}if(DESK)DESK.show();location.hash='ahora';break;
     case 'cant':if(DESK)DESK.show();location.hash='ahora';setTimeout(openCommitSheet,50);break;
     case 'pause':{const t=stopActive();save('tasks');if(t)toast('Guardé tu sesión. Buen trabajo.');break}
     case 'left':state.journal.commuteActive={leftAt:Date.now(),dir:'ida'};save('journal');break;

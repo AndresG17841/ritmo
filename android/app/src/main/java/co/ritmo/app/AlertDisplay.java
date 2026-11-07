@@ -35,6 +35,16 @@ final class AlertDisplay {
     private static View overlay;
     private static WindowManager overlayWm;
 
+    /** Otro dispositivo ya atendió este aviso: lo quito de aquí y no lo vuelvo a mostrar. */
+    static void cancel(Context ctx, int id, String key) {
+        final Context c = ctx.getApplicationContext();
+        NotificationManager nm = (NotificationManager) c.getSystemService(Context.NOTIFICATION_SERVICE);
+        if (nm != null) nm.cancel(ALERT_NOTIF_BASE + Math.abs(id % 100000));
+        String cur = Store.get(c, "overlayKey", "");
+        if (key != null && key.equals(cur)) new Handler(Looper.getMainLooper()).post(() -> dismissOverlay(c));
+        Scheduler.cancelKey(c, key);
+    }
+
     static void show(Context ctx, JSONObject a) {
         final Context c = ctx.getApplicationContext();
         if (alreadyShown(c, a)) return;
@@ -105,6 +115,7 @@ final class AlertDisplay {
 
     static void showOverlay(Context c, JSONObject a) {
         dismissOverlay(c);
+        Store.put(c, "overlayKey", a.optString("key"));
         WindowManager wm = (WindowManager) c.getSystemService(Context.WINDOW_SERVICE);
         if (wm == null) { postNotification(c, a); return; }
         int type = Build.VERSION.SDK_INT >= 26 ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;

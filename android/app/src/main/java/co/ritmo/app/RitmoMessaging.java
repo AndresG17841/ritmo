@@ -10,7 +10,11 @@ public class RitmoMessaging extends FirebaseMessagingService {
     public void onMessageReceived(RemoteMessage m) {
         String alert = m.getData().get("alert");
         if (alert == null) return;
-        try { AlertDisplay.show(this, new JSONObject(alert)); } catch (Exception ignored) { }
+        try {
+            JSONObject a = new JSONObject(alert);
+            if (a.has("cancel")) { AlertDisplay.cancel(this, a.optInt("id"), a.optString("cancel")); return; }
+            AlertDisplay.show(this, a);
+        } catch (Exception ignored) { }
     }
 
     @Override

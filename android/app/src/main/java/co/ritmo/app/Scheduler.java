@@ -39,6 +39,17 @@ final class Scheduler {
         if (am != null) am.cancel(pi(c, a));
     }
 
+    /** Quita de los avisos guardados el que ya se atendió en otro dispositivo. */
+    static synchronized void cancelKey(Context c, String key) {
+        if (key == null) return;
+        JSONArray old = Store.array(c, "alerts"), keep = new JSONArray();
+        for (int i = 0; i < old.length(); i++) {
+            JSONObject a = old.optJSONObject(i); if (a == null) continue;
+            if (key.equals(a.optString("key"))) cancel(c, a); else keep.put(a);
+        }
+        Store.put(c, "alerts", keep.toString());
+    }
+
     /** Reemplaza todos los avisos por la lista nueva. */
     static synchronized void replaceAll(Context c, String alertsJson, String timelineJson) {
         JSONArray old = Store.array(c, "alerts");
