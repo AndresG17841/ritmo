@@ -62,7 +62,9 @@ final class AlertDisplay {
 
     /** Evita mostrar el mismo aviso dos veces (alarma local + push). */
     private static synchronized boolean alreadyShown(Context c, JSONObject a) {
-        String id = a.optString("key") + "|" + (a.optLong("at") / 60000);
+        String k0 = a.optString("key");
+        // Las tareas llevan el día en la llave: si el bloque se corre unos minutos, sigue siendo el mismo aviso.
+        String id = (k0.startsWith("task:") && !a.optBoolean("snz")) ? k0 : k0 + "|" + (a.optLong("at") / 60000);
         if ("test".equals(a.optString("key"))) return false;
         try {
             JSONObject shown = new JSONObject(Store.get(c, "shown", "{}"));

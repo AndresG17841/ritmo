@@ -1290,7 +1290,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 20:29</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 20:52</p>`;
   return h;
 }
 function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
@@ -2204,7 +2204,8 @@ function alertsFor(P,di){
   for(const b of T.blocks){
     if(b.type==='task'){
       const t=state.tasks.items.find(x=>x.id===b.taskId);
-      out.push({key:`task:${b.taskId}:${b.start}`,at:b.start,kind:'task',big:true,title:`Toca: ${b.title}`,body:`Bloque de ${dur(b.end-b.start)}, hasta las ${fmt(b.end)}${b.sub?' · '+b.sub:''}.`,taskId:b.taskId,end:b.end,
+      const nth=T.blocks.filter(x=>x.type==='task'&&x.taskId===b.taskId&&x.start<b.start).length;
+      out.push({key:`task:${b.taskId}:${T.k}:${nth}`,at:b.start,kind:'task',big:true,title:`Toca: ${b.title}`,body:`Bloque de ${dur(b.end-b.start)}, hasta las ${fmt(b.end)}${b.sub?' · '+b.sub:''}.`,taskId:b.taskId,end:b.end,
         buttons:[['start','Empiezo'],['snooze10','En 10 min'],['cant','No puedo ahora']]});
       if(t)out.push({key:`taskend:${b.taskId}:${b.end}`,at:b.end,kind:'taskend',big:false,onlyIfActive:b.taskId,title:'Se acabó el bloque',body:`${b.title}. Descansa unos minutos.`,buttons:[['pause','Pausar y guardar'],['snooze15','Sigo 15 min más']]});
     }

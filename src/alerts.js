@@ -6,7 +6,8 @@ function alertsFor(P,di){
   for(const b of T.blocks){
     if(b.type==='task'){
       const t=state.tasks.items.find(x=>x.id===b.taskId);
-      out.push({key:`task:${b.taskId}:${b.start}`,at:b.start,kind:'task',big:true,title:`Toca: ${b.title}`,body:`Bloque de ${dur(b.end-b.start)}, hasta las ${fmt(b.end)}${b.sub?' · '+b.sub:''}.`,taskId:b.taskId,end:b.end,
+      const nth=T.blocks.filter(x=>x.type==='task'&&x.taskId===b.taskId&&x.start<b.start).length;
+      out.push({key:`task:${b.taskId}:${T.k}:${nth}`,at:b.start,kind:'task',big:true,title:`Toca: ${b.title}`,body:`Bloque de ${dur(b.end-b.start)}, hasta las ${fmt(b.end)}${b.sub?' · '+b.sub:''}.`,taskId:b.taskId,end:b.end,
         buttons:[['start','Empiezo'],['snooze10','En 10 min'],['cant','No puedo ahora']]});
       if(t)out.push({key:`taskend:${b.taskId}:${b.end}`,at:b.end,kind:'taskend',big:false,onlyIfActive:b.taskId,title:'Se acabó el bloque',body:`${b.title}. Descansa unos minutos.`,buttons:[['pause','Pausar y guardar'],['snooze15','Sigo 15 min más']]});
     }

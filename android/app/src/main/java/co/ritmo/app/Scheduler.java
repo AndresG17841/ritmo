@@ -74,6 +74,7 @@ final class Scheduler {
             JSONObject b = new JSONObject(a.toString());
             long at = System.currentTimeMillis() + minutes * 60000L;
             b.put("at", at);
+            b.put("snz", true);
             b.put("id", (int) ((a.optInt("id") * 31L + at / 1000) % 2000000000L));
             schedule(c, b);
         } catch (Exception ignored) { }
