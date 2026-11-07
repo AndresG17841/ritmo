@@ -1446,7 +1446,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:48</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:55</p>`;
   h+=FS;
   return h;
 }
@@ -1642,7 +1642,7 @@ function expectedIncome(){
 }
 function ownBank(){
   const F=fin();const ins=F.moves.filter(x=>x.type==='in').reduce((a,x)=>{const p=incPlan(x);return a+p.own+(p.needs||0)+(p.cardIn||0)},0);
-  const outs=F.moves.filter(x=>(x.type==='out'&&!(x.fixedId||x.fixedPaid)&&x.kind!=='fund'&&x.pay!=='card')||(x.type==='use'&&(x.from==='own'||x.from==='needs'))).reduce((a,x)=>a+x.amount,0);
+  const outs=F.moves.filter(x=>(x.type==='out'&&!(x.fixedId||x.fixedPaid||x.uni)&&x.kind!=='fund'&&x.pay!=='card')||(x.type==='use'&&(x.from==='own'||x.from==='needs'))).reduce((a,x)=>a+x.amount,0);
   const back=F.moves.filter(x=>x.type==='use'&&x.from==='save'&&x.to==='own').reduce((a,x)=>a+x.amount,0);
   return ins-outs+back;
 }
@@ -1978,8 +1978,11 @@ function vPlata(){
     const fx=fixedState();const rows=[];
     if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
       rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>${c.nextDue?niceDate(c.nextDue):''} · ${ok?'apartado ✓':'apartado '+money(ap)}</small></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
+    const wk=Date.now()-7*864e5;
+    for(const b of (F.bills||[]).filter(b=>!b.paidAt||Date.parse(b.paidAt)>wk))
+      rows.push(`<div class="prow ${b.paidAt?'done':''}"><span class="pdot ${b.paidAt?'ok':'risk'}"></span><span class="pmain"><b>${esc(b.name)}</b><small>${b.paidAt?'Pagado':'Imprevisto · '+shortDate(b.date)}</small></span><span class="pamt">${money(b.amount)}</span>${b.paidAt?'<span class="pill p-bien">✓</span>':`<button class="small primary" data-act="bill-pay" data-id="${b.id}">Pagar</button>`}</div>`);
     for(const x of fx){
-      if(x.variable)rows.push(`<div class="prow"><span class="pdot"></span><span class="pmain"><b>${esc(x.name)}</b><small>${x.spent?"Este mes: "+money(x.spent):"Cuando toque pagar"}</small></span><span class="pamt"></span><button class="small primary" data-act="fix-add" data-id="${x.id}">Pagar</button></div>`);
+      if(x.variable)continue;
       else rows.push(`<div class="prow ${x.paid?'done':''}"><span class="pdot ${x.paid?'ok':''}"></span><span class="pmain"><b>${esc(x.name)}</b>${x.day?`<small>el ${x.day}</small>`:''}</span><span class="pamt">${money(x.amount)}</span>${x.paid?`<button class="small ghost" data-act="fix-undo" data-id="${x.id}">✓ Pagado</button>`:`<button class="small primary" data-act="pay-open" data-k="fixed" data-id="${x.id}">Pagar</button>`}</div>`);
     }
     h+=rows.length?`<section class="card"><div class="plist">${rows.join('')}</div></section>`:`<section class="card empty-art"><div class="art">🌤</div><b>Nada por pagar</b></section>`;
@@ -2066,7 +2069,7 @@ function addMove(m){
   const r=finRef(m.type,m.ref);
   if(r&&m.type==='save')r.saved+=m.amount;
   const F2=fin();
-  const fxv=m.type==='out'&&m.fixedId&&(F2.fixed.find(x=>x.id===m.fixedId)||{}).variable;
+  const fxv=m.type==='out'&&(m.uni||(m.fixedId&&(F2.fixed.find(x=>x.id===m.fixedId)||{}).variable));
   if(fxv){ // Universidad: se paga al revés de como se llena: lo tuyo → metas → fondo → mensualidades; lo que falte deja el fondo en negativo
     let need=m.amount;m.linked=m.linked||[];const used=[];const lbl=(m.cat||'Universidad');
     const use=(from,x,note)=>{if(x<=0)return;const u={id:uid(),type:'use',from,amount:x,date:m.date,note:lbl+' ('+note+')'};F2.moves.push(u);m.linked.push(u.id);need-=x;used.push([note,x])};
@@ -2153,6 +2156,8 @@ function finForm(f){
     const before=T==='out'?monthState():null;
     const m={type:T,amount:amt,date,note,ref};
     if(T==='in')m.plan=splitPlan(amt);
+    if(T==='out'&&K==='fund'&&UI.payWith!=='card'){const c0=document.getElementById('fin-cat').value;const fxu=c0.startsWith('fx:')&&(F.fixed.find(x=>x.id===c0.slice(3))||{}).variable;
+      if(c0==='Universidad'||fxu){F.bills=F.bills||[];F.bills.push({id:uid(),name:note||'Universidad',amount:amt,date});UI.amtDraft='';UI.preCat=null;save('finance');UI.sub.plata='pagar';render();toast('Quedó en Por pagar. Págalo cuando tengas la plata.');return}}
     if(T==='out'){m.kind=K;let cat=document.getElementById('fin-cat').value;
       if(cat.startsWith('fx:')){const fx0=F.fixed.find(x=>x.id===cat.slice(3));
         if(fx0&&fx0.variable&&UI.payWith!=='card'){const have=Math.max(0,ownBank())+F.goals.reduce((t,g)=>t+g.saved,0)+Math.max(0,fundBal())+F.env.fixed;
@@ -2285,6 +2290,11 @@ document.addEventListener('click',e=>{
       if(P.save>0){const al=allocSave(P.save);if(al.length)al.forEach(x=>addMove({type:'save',amount:x.a,date:today,ref:x.g.id,note:'Del reparto'}));else addMove({type:'save',amount:P.save,date:today,ref:'',note:'Del reparto'})}
       UI.split=null;save('finance');render();coinRain();break}
     case 'loan-new':UI.loanNew=!UI.loanNew;render();if(UI.loanNew)setTimeout(()=>{const x=document.getElementById('d-name');if(x)x.focus()},50);break;
+    case 'bill-pay':{const F=fin();const b=(F.bills||[]).find(x=>x.id===id);if(!b)break;
+      const have=Math.max(0,ownBank())+F.goals.reduce((t,g)=>t+g.saved,0)+Math.max(0,fundBal())+F.env.fixed;
+      if(have<b.amount){toast(`No alcanza: entre todo tienes ${money(have)}.`);break}
+      const m={type:'out',kind:'needs',uni:true,amount:b.amount,date:dkey(new Date()),cat:'Universidad',note:b.name};addMove(m);b.paidAt=new Date().toISOString();b.moveId=m.id;
+      save('finance');render();toast('Pagado: '+(m.paidFrom||[]).map(([n,x])=>money(x)+' '+n).join(', ')+'.');break}
     case 'fin-strat':fin().strategy=el.dataset.v;save('finance');render();break;
     case 'fin-del-move':delMove(id);save('finance');render();toast('Movimiento borrado.');break;
     case 'fin-del-debt':case 'fin-del-goal':{if(UI.confirmDel===id){const F=fin();if(act==='fin-del-debt')F.debts=F.debts.filter(d=>d.id!==id);else F.goals=F.goals.filter(g=>g.id!==id);UI.confirmDel=null;save('finance');render()}else{UI.confirmDel=id;render()}break}
