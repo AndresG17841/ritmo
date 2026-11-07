@@ -529,6 +529,13 @@ html.still .coinrain span{animation:coinfall 1.4s cubic-bezier(.4,.1,.6,1) forwa
 nav.tabs{box-shadow:0 6px 18px rgba(228,111,140,.14);transform:translateZ(0)}
 .fab{box-shadow:0 6px 16px rgba(240,140,150,.38);transform:translateZ(0)}
 .card,.setg{contain:layout paint}
+
+/* menos sombras = scroll más suave */
+.blk .b,.blk .b[class*="t-"]{box-shadow:none;border:1px solid var(--line)}
+.card{box-shadow:0 2px 10px rgba(228,111,140,.08)}
+.card .task,.tank,.loan,.days button{box-shadow:none}
+.wrap>.top::after{box-shadow:0 0 0 12px var(--orb-glow)}
+html[data-phase="noche"] .wrap>.top::after{box-shadow:inset -14px -6px 0 0 #E9E3FF}
 </style>
 
 <div class="wrap" id="app">
@@ -1535,7 +1542,7 @@ function fixedState(){
     return Object.assign({},x,{paid:!!paid[x.id],expected:x.amount});
   });
 }
-function fixedPendingTotal(){return fixedState().reduce((a,x)=>a+(x.variable?Math.max(0,x.est-x.spent):x.paid?0:x.amount),0)}
+function fixedPendingTotal(){return fixedState().reduce((a,x)=>a+(x.variable?0:x.paid?0:x.amount),0)}
 function envNeeds(){const F=fin(),c=card();return {fixed:Math.max(0,fixedPendingTotal()-F.env.fixed),card:Math.max(0,(c?c.minPay:0)-F.env.card)}}
 /* --- metas --- */
 function monthsTo(ym){if(!ym)return null;const[y,m]=ym.split('-').map(Number);const d=new Date();return Math.max(1,(y-d.getFullYear())*12+(m-1-d.getMonth()))}
@@ -1616,7 +1623,7 @@ function splitPlan(a){
   return {debts,debt,target:debts[0]?debts[0].id:null,targetName:debts.map(x=>x.name).join(', '),prio:debt>0,loansFirst,owing,
     fixed,card:cardA,cardIn:cardA,fund,save,needs:0,own,pct:a>0?Math.round((debt+fixed+cardA)/a*100):0,E};
 }
-function fixedMonthly(){return fixedState().reduce((t,x)=>t+(x.variable?x.est:x.amount),0)}
+function fixedMonthly(){return fixedState().reduce((t,x)=>t+(x.variable?0:x.amount),0)}
 function cardDueAll(c){return c&&c.balance>0?(c.minPay||0):0}
 /* Bolsillos: cuánto hay en cada parte de tu plata y cuánto le falta */
 function pockets(){
@@ -1935,7 +1942,11 @@ function addMove(m){
   const r=finRef(m.type,m.ref);
   if(r&&m.type==='save')r.saved+=m.amount;
   const F2=fin();
-  if(m.type==='out'&&(m.fixedId||m.fixedPaid)){m.envUsed=Math.min(F2.env.fixed,m.amount);F2.env.fixed-=m.envUsed}
+  const fxv=m.type==='out'&&m.fixedId&&(F2.fixed.find(x=>x.id===m.fixedId)||{}).variable;
+  if(fxv){const fromFund=Math.min(Math.max(0,fundBal()),m.amount);const fromEnv=Math.min(F2.env.fixed,m.amount-fromFund);const extra=m.amount-fromFund-fromEnv;
+    m.envUsed=fromEnv;F2.env.fixed-=fromEnv;m.linked=m.linked||[];
+    if(fromFund+extra>0){const u={id:uid(),type:'use',from:'fund',amount:fromFund+extra,date:m.date,note:(m.cat||'Gasto')+' (del fondo)'};F2.moves.push(u);m.linked.push(u.id)}}
+  else if(m.type==='out'&&(m.fixedId||m.fixedPaid)){m.envUsed=Math.min(F2.env.fixed,m.amount);F2.env.fixed-=m.envUsed}
   if(r&&m.type==='debt'){
     if(r.kind==='card'){m.envUsed=Math.min(F2.env.card,m.amount);F2.env.card-=m.envUsed;let left=m.amount;m.alloc=[];for(const p of r.purchases.slice().sort((a,b)=>a.date.localeCompare(b.date))){if(left<=0)break;const x=Math.min(left,p.left);p.left-=x;left-=x;m.alloc.push([p.id,x])}cardRecalc(r)}
     else r.balance-=m.amount;
