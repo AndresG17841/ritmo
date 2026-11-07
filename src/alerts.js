@@ -19,7 +19,7 @@ function alertsFor(P,di){
     if(b.type==='pause')out.push({key:`pause:${b.start}`,at:b.start,kind:'soft',big:true,title:'Pausa de 15 min',body:`Llevas 3 horas seguidas. Estírate y toma agua; sigues a las ${fmt(b.end)}.`,buttons:[['ok','Listo'],['snooze10','Termino en 10 min']]});
     if(b.type==='rest')out.push({key:`rest:${b.start}`,at:b.start,kind:'soft',big:false,title:'Descanso al llegar',body:`No tienes que hacer nada hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
   }
-  for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:false,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min'],['ping-skip','Ahora no puedo']]});
+  for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:true,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min'],['ping-skip','Ahora no puedo']]});
   return out;
 }
 // Avisos atendidos en cualquier dispositivo (celular o PC): se guardan en la nube y los demás no lo repiten.

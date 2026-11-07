@@ -60,7 +60,7 @@ head='''<!doctype html>
 <link rel="apple-touch-icon" href="icon.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <script src="vendor/supabase.js"></script>
-<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__rl){window.__rl=1;location.reload()}had=true});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{})})</script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let had=!!navigator.serviceWorker.controller;const rl=()=>{const t=document.activeElement;if(t&&/INPUT|TEXTAREA|SELECT/.test(t.tagName)){document.addEventListener('visibilitychange',()=>location.reload(),{once:true});return}location.reload()};navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__rl){window.__rl=1;rl()}had=true});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update().catch(()=>{}),15*60000)}).catch(()=>{})})</script>
 </head><body>
 '''
 s=head+s+'\n</body></html>\n'

@@ -9,7 +9,7 @@
 <link rel="apple-touch-icon" href="icon.png">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);color-scheme:light}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 <script src="vendor/supabase.js"></script>
-<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let had=!!navigator.serviceWorker.controller;navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__rl){window.__rl=1;location.reload()}had=true});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>r.update()).catch(()=>{})})</script>
+<script>if('serviceWorker' in navigator&&location.protocol==='https:')addEventListener('load',()=>{let had=!!navigator.serviceWorker.controller;const rl=()=>{const t=document.activeElement;if(t&&/INPUT|TEXTAREA|SELECT/.test(t.tagName)){document.addEventListener('visibilitychange',()=>location.reload(),{once:true});return}location.reload()};navigator.serviceWorker.addEventListener('controllerchange',()=>{if(had&&!window.__rl){window.__rl=1;rl()}had=true});navigator.serviceWorker.register('sw.js',{updateViaCache:'none'}).then(r=>{r.update();setInterval(()=>r.update().catch(()=>{}),15*60000)}).catch(()=>{})})</script>
 </head><body>
 
 <meta name="claude:viewport-fit-sides" content="cover">
@@ -1339,7 +1339,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 21:01</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 23:08</p>`;
   return h;
 }
 function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
@@ -2268,7 +2268,7 @@ function alertsFor(P,di){
     if(b.type==='pause')out.push({key:`pause:${b.start}`,at:b.start,kind:'soft',big:true,title:'Pausa de 15 min',body:`Llevas 3 horas seguidas. Estírate y toma agua; sigues a las ${fmt(b.end)}.`,buttons:[['ok','Listo'],['snooze10','Termino en 10 min']]});
     if(b.type==='rest')out.push({key:`rest:${b.start}`,at:b.start,kind:'soft',big:false,title:'Descanso al llegar',body:`No tienes que hacer nada hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
   }
-  for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:false,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min'],['ping-skip','Ahora no puedo']]});
+  for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:true,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min'],['ping-skip','Ahora no puedo']]});
   return out;
 }
 // Avisos atendidos en cualquier dispositivo (celular o PC): se guardan en la nube y los demás no lo repiten.
