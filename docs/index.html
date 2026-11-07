@@ -557,6 +557,14 @@ nav.tabs{box-shadow:0 6px 18px rgba(228,111,140,.14);transform:translateZ(0)}
 .card .task,.tank,.loan,.days button{box-shadow:none}
 .wrap>.top::after{box-shadow:0 0 0 12px var(--orb-glow)}
 html[data-phase="noche"] .wrap>.top::after{box-shadow:inset -14px -6px 0 0 #E9E3FF}
+
+/* En pantallas grandes (PC) vuelven las sombras y el brillo: ahí sobra potencia */
+@media (min-width:900px) and (hover:hover){
+  .blk .b,.blk .b[class*="t-"]{box-shadow:var(--shadow-sm);border-color:transparent}
+  .card{box-shadow:0 14px 34px rgba(228,111,140,.10),0 2px 6px rgba(47,42,62,.05)}
+  .tank,.loan,.days button{box-shadow:0 6px 16px rgba(228,111,140,.10)}
+  .wrap>.top::after{box-shadow:0 0 0 14px var(--orb-glow),0 0 50px 20px var(--orb-glow)}
+}
 </style>
 
 <div class="wrap" id="app">
@@ -1436,7 +1444,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:30</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:35</p>`;
   h+=FS;
   return h;
 }

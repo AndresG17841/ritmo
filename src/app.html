@@ -536,6 +536,14 @@ nav.tabs{box-shadow:0 6px 18px rgba(228,111,140,.14);transform:translateZ(0)}
 .card .task,.tank,.loan,.days button{box-shadow:none}
 .wrap>.top::after{box-shadow:0 0 0 12px var(--orb-glow)}
 html[data-phase="noche"] .wrap>.top::after{box-shadow:inset -14px -6px 0 0 #E9E3FF}
+
+/* En pantallas grandes (PC) vuelven las sombras y el brillo: ahí sobra potencia */
+@media (min-width:900px) and (hover:hover){
+  .blk .b,.blk .b[class*="t-"]{box-shadow:var(--shadow-sm);border-color:transparent}
+  .card{box-shadow:0 14px 34px rgba(228,111,140,.10),0 2px 6px rgba(47,42,62,.05)}
+  .tank,.loan,.days button{box-shadow:0 6px 16px rgba(228,111,140,.10)}
+  .wrap>.top::after{box-shadow:0 0 0 14px var(--orb-glow),0 0 50px 20px var(--orb-glow)}
+}
 </style>
 
 <div class="wrap" id="app">
