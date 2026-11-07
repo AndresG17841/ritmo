@@ -1434,6 +1434,11 @@ function fin(){
   if(F.split.spend!=null){const sp=+F.split.spend;F.split.needs=Math.round(sp*0.65/5)*5;F.split.own=sp-F.split.needs;delete F.split.spend}
   F.wish=F.wish||[];F.skipped=F.skipped||0;F.fixed=F.fixed||[];F.fixedPaid=F.fixedPaid||{};F.env=Object.assign({fixed:0,card:0},F.env||{});F.swept=F.swept||{};
   {const gi=F.goals.findIndex(g=>/^fondo/i.test((g.name||'').trim()));if(gi>=0){const g=F.goals[gi];if(g.saved>0)F.moves.push({id:uid(),type:'fund',amount:g.saved,date:dkey(new Date()),note:'Desde la meta Fondo'});F.moves=F.moves.filter(m=>!(m.type==='save'&&m.ref===g.id));F.goals.splice(gi,1)}}
+  if(!F.fix1107&&sbUser){F.fix1107=1; // arreglo pedido el 7 nov: quitar las pruebas de 150k de la U y marcar el plan del celular pagado
+    for(const b of (F.bills||[]).filter(b=>b.amount===150000)){if(b.moveId&&F.moves.some(m=>m.id===b.moveId))delMove(b.moveId)}
+    F.bills=(F.bills||[]).filter(b=>b.amount!==150000);
+    const cel=F.fixed.find(x=>/dato|celular|plan/i.test(x.name||''));if(cel){const mk=curMonth();F.fixedPaid[mk]=F.fixedPaid[mk]||{};if(!F.fixedPaid[mk][cel.id])F.fixedPaid[mk][cel.id]=true}
+    setTimeout(()=>save('finance'),0)}
   const c=F.debts.find(d=>d.kind==='card');if(c&&c.payDay==null){c.payDay=18;c.cutDay=29;cardRecalc(c)}
   return F;
 }
@@ -1866,7 +1871,7 @@ function vPlata(){
   if(sub==='pagar'){
     const fx=fixedState();const rows=[];
     if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
-      rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>${c.nextDue?niceDate(c.nextDue):''} · ${ok?'apartado ✓':'apartado '+money(ap)}</small></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
+      rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>Debes ${money(c.balance)} · paga ${c.nextDue?niceDate(c.nextDue):''} · ${ok?'apartado ✓':'apartado '+money(ap)}</small></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
     const wk=Date.now()-7*864e5;
     for(const b of (F.bills||[]).filter(b=>!b.paidAt||Date.parse(b.paidAt)>wk))
       rows.push(`<div class="prow ${b.paidAt?'done':''}"><span class="pdot ${b.paidAt?'ok':'risk'}"></span><span class="pmain"><b>${esc(b.name)}</b><small>${b.paidAt?'Pagado':'Imprevisto · '+shortDate(b.date)}</small></span><span class="pamt">${money(b.amount)}</span>${b.paidAt?'<span class="pill p-bien">✓</span>':`<button class="small primary" data-act="bill-pay" data-id="${b.id}">Pagar</button>`}</div>`);
