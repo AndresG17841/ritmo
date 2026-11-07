@@ -1432,7 +1432,7 @@ const r1000=n=>Math.round(n/1000)*1000;
 function fin(){
   const F=state.finance;
   if(F.split.spend!=null){const sp=+F.split.spend;F.split.needs=Math.round(sp*0.65/5)*5;F.split.own=sp-F.split.needs;delete F.split.spend}
-  F.wish=F.wish||[];F.skipped=F.skipped||0;F.fixed=F.fixed||[];F.fixedPaid=F.fixedPaid||{};F.env=Object.assign({fixed:0,card:0},F.env||{});F.swept=F.swept||{};
+  F.wish=F.wish||[];F.skipped=F.skipped||0;F.fixed=F.fixed||[];F.fixedPaid=F.fixedPaid||{};F.env=F.env||{};if(F.env.fixed==null)F.env.fixed=0;if(F.env.card==null)F.env.card=0;F.swept=F.swept||{};
   {const gi=F.goals.findIndex(g=>/^fondo/i.test((g.name||'').trim()));if(gi>=0){const g=F.goals[gi];if(g.saved>0)F.moves.push({id:uid(),type:'fund',amount:g.saved,date:dkey(new Date()),note:'Desde la meta Fondo'});F.moves=F.moves.filter(m=>!(m.type==='save'&&m.ref===g.id));F.goals.splice(gi,1)}}
   if(!F.fix1107&&sbUser){F.fix1107=1; // arreglo pedido el 7 nov: quitar las pruebas de 150k de la U y marcar el plan del celular pagado
     for(const b of (F.bills||[]).filter(b=>b.amount===150000)){if(b.moveId&&F.moves.some(m=>m.id===b.moveId))delMove(b.moveId)}
@@ -1558,7 +1558,9 @@ function fixedState(){
   });
 }
 function fixedPendingTotal(){return fixedState().reduce((a,x)=>a+(x.variable?0:x.paid?0:x.amount),0)}
-function envNeeds(){const F=fin(),c=card();return {fixed:Math.max(0,fixedPendingTotal()-F.env.fixed),card:Math.max(0,(c?c.minPay:0)-F.env.card)}}
+// lo apartado para la tarjeta vive dentro de "Para ti": si lo tuyo bajó (p. ej. pagaste la U), el apartado baja también
+function cardRes(){const F=fin();return Math.min(F.env.card,Math.max(0,ownBank()))}
+function envNeeds(){const F=fin(),c=card();return {fixed:Math.max(0,fixedPendingTotal()-F.env.fixed),card:Math.max(0,(c?c.minPay:0)-cardRes())}}
 /* --- metas --- */
 function monthsTo(ym){if(!ym)return null;const[y,m]=ym.split('-').map(Number);const d=new Date();return Math.max(1,(y-d.getFullYear())*12+(m-1-d.getMonth()))}
 function goalInfo(g){
@@ -1620,7 +1622,7 @@ function splitPlan(a){
   // si sacaste del fondo más de lo que tenía (gasto ya hecho o que sabes que viene), se rellena antes que todo lo demás
   const refill=Math.min(r,Math.max(0,-fundBal()));r-=refill;
   const loans=debtTargets();const L=loans.reduce((t,d)=>t+d.balance,0);
-  const cardNeed=c&&c.balance>0?Math.max(0,(c.minPay||0)-F.env.card):0;
+  const cardNeed=c&&c.balance>0?Math.max(0,(c.minPay||0)-cardRes()):0;
   const loansFirst=false; // la tarjeta va primero, luego los préstamos
   const debts=[];let cardA=0;
   const payLoans=()=>{for(const d of loans){if(r<=0)break;const x=Math.min(r,d.balance);if(x>0){debts.push({id:d.id,name:d.name,a:x});r-=x}}};
@@ -1760,7 +1762,7 @@ function payTarget(P){
   const F=fin();
   if(P.kind==='fixed'){const x=F.fixed.find(f=>f.id===P.id);return x?{name:x.name,due:x.amount,env:F.env.fixed}:null}
   const d=F.debts.find(d=>d.id===P.id);if(!d)return null;
-  return {name:d.name,due:d.kind==='card'?d.minPay:(d.minPay||d.balance),env:d.kind==='card'?F.env.card:0,max:d.balance,isCard:d.kind==='card'};
+  return {name:d.name,due:d.kind==='card'?d.minPay:(d.minPay||d.balance),env:d.kind==='card'?cardRes():0,max:d.balance,isCard:d.kind==='card'};
 }
 function payCard(){
   const P=UI.pay;const T=payTarget(P);if(!T)return '';
@@ -1841,7 +1843,7 @@ function vPlata(){
     h+=cascadeCard();
     // Por pagar
     const fx=fixedState();const rows=[];
-    if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
+    if(c&&c.balance>0){const ap=Math.min(cardRes(),c.minPay);const ok=ap>=c.minPay;
       rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>${c.nextDue?niceDate(c.nextDue):''} · ${ok?'apartado ✓':'apartado '+money(ap)}</small><span class="thin"><i style="width:${c.minPay?Math.min(100,ap/c.minPay*100):0}%"></i></span></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
     for(const d of F.debts.filter(d=>d.kind!=='card'&&d.balance>0))
       rows.push(`<div class="prow"><span class="pdot ${d.priority?'risk':''}"></span><span class="pmain"><b>${esc(d.name)}</b><small>Debes ${money(d.balance)}${d.dueDay?' · el '+d.dueDay:''}</small></span><span class="pamt">${d.minPay?money(d.minPay):''}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${d.id}">Pagar</button></div>`);
@@ -1872,7 +1874,7 @@ function vPlata(){
       if(!UI.cardPay||!pays.includes(UI.cardPay))UI.cardPay=pays[0];
       rows.push(`<div class="prow cardset"><span class="pdot"></span><span class="pmain"><b>Tarjeta</b><small>¿Cuánto debes y cuándo se paga?</small>
         <span class="row" style="gap:6px;margin-top:6px"><input id="card-bal" class="mini" inputmode="numeric" placeholder="$ 0" value="${c&&c.balance>0?c.balance:''}">${pays.map((d,i)=>`<button class="chip small ${(UI.cardPay||pays[0])===d?'sel':''}" data-act="card-pay-pick" data-v="${d}">${niceDate(d)}</button>`).join('')}<button class="small primary" data-act="card-set">Guardar</button></span></span></div>`)}
-    else if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
+    else if(c&&c.balance>0){const ap=Math.min(cardRes(),c.minPay);const ok=ap>=c.minPay;
       rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>Debes ${money(c.balance)} · paga ${c.nextDue?niceDate(c.nextDue):''} · <a href="#plata" data-act="card-edit">cambiar</a></small></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
     const wk=Date.now()-7*864e5;
     for(const b of (F.bills||[]).filter(b=>!b.paidAt||Date.parse(b.paidAt)>wk))
@@ -1969,7 +1971,7 @@ function addMove(m){
   if(fxv){ // Universidad: se paga al revés de como se llena: lo tuyo → metas → fondo → mensualidades; lo que falte deja el fondo en negativo
     let need=m.amount;m.linked=m.linked||[];const used=[];const lbl=(m.cat||'Universidad');
     const use=(from,x,note)=>{if(x<=0)return;const u={id:uid(),type:'use',from,amount:x,date:m.date,note:lbl+' ('+note+')'};F2.moves.push(u);m.linked.push(u.id);need-=x;used.push([note,x])};
-    use('own',Math.min(need,Math.max(0,ownBank())),'de lo tuyo');
+    use('own',Math.min(need,Math.max(0,ownBank())),'de lo tuyo');F2.env.card=Math.min(F2.env.card,Math.max(0,ownBank()));
     for(const g of goalsSorted().slice().reverse()){if(need<=0)break;const x=Math.min(need,g.saved);if(x>0){g.saved-=x;const u={id:uid(),type:'save',amount:-x,date:m.date,ref:g.id,note:lbl+' (de '+g.name+')'};F2.moves.push(u);m.linked.push(u.id);need-=x;used.push(['de '+g.name,x])}}
     use('fund',Math.min(need,Math.max(0,fundBal())),'del fondo');
     {const x=Math.min(need,F2.env.fixed);if(x>0){m.envUsed=x;F2.env.fixed-=x;need-=x;used.push(['de mensualidades',x])}}
@@ -1980,6 +1982,7 @@ function addMove(m){
     else r.balance-=m.amount;
   }
   F.moves.push(m);
+  if(m.type!=='in')F.env.card=Math.min(F.env.card,Math.max(0,ownBank()));
   if(F.moves.length>800)F.moves=F.moves.slice(-800);
 }
 function delMove(id){
