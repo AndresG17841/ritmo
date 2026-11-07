@@ -1446,7 +1446,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:55</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 01:00</p>`;
   h+=FS;
   return h;
 }
@@ -1637,7 +1637,7 @@ function classFrac(mk){
 }
 function expectedIncome(){
   const F=fin();const base=+F.expectedIncome||300000;
-  const done=lastMonths(4).slice(1).map(m=>F.moves.filter(x=>x.type==='in'&&monthKey(x.date)===m).reduce((a,x)=>a+x.amount,0)).filter(v=>v>0);
+  const done=lastMonths(4).slice(1).map(m=>F.moves.filter(x=>x.type==='in'&&!x.loan&&monthKey(x.date)===m).reduce((a,x)=>a+x.amount,0)).filter(v=>v>0);
   return done.length?Math.round(done.reduce((a,b)=>a+b,0)/done.length):base; // el supuesto solo mientras no haya meses reales
 }
 function ownBank(){
@@ -2176,7 +2176,10 @@ function finForm(f){
     if(!name||!(bal>0))return err('d-err')('Escribe a quién le debes y cuánto.');
     const day=parseInt(document.getElementById('d-day').value,10);
     F.debts.push({id:uid(),name,balance:bal,original:bal,rate:Math.max(0,num(document.getElementById('d-rate').value)||0),minPay:parseMoney(document.getElementById('d-min').value),dueDay:day>=1&&day<=31?Math.min(day,28):null});
-    UI.loanNew=false;save('finance');render();burst(['🤝','💸','✨'],12);toast('Préstamo agregado.');return;
+    {const d0=F.debts[F.debts.length-1],today=dkey(new Date());
+     addMove({type:'in',amount:bal,date:today,note:'Préstamo de '+name,loan:d0.id,plan:{fixed:0,card:0,debt:0,save:0,needs:0,own:0}});
+     addMove({type:'fund',amount:bal,date:today,note:'Préstamo de '+name,loan:d0.id})}
+    UI.loanNew=false;save('finance');render();burst(['🤝','💸','✨'],12);toast(`Préstamo agregado: entraron ${money(bal)} al Fondo.`);return;
   }
   if(f.id==='f-goal'){
     const name=document.getElementById('g-name').value.trim(),tg=parseMoney(document.getElementById('g-target').value);

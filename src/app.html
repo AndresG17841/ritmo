@@ -1526,7 +1526,7 @@ function classFrac(mk){
 }
 function expectedIncome(){
   const F=fin();const base=+F.expectedIncome||300000;
-  const done=lastMonths(4).slice(1).map(m=>F.moves.filter(x=>x.type==='in'&&monthKey(x.date)===m).reduce((a,x)=>a+x.amount,0)).filter(v=>v>0);
+  const done=lastMonths(4).slice(1).map(m=>F.moves.filter(x=>x.type==='in'&&!x.loan&&monthKey(x.date)===m).reduce((a,x)=>a+x.amount,0)).filter(v=>v>0);
   return done.length?Math.round(done.reduce((a,b)=>a+b,0)/done.length):base; // el supuesto solo mientras no haya meses reales
 }
 function ownBank(){
@@ -2065,7 +2065,10 @@ function finForm(f){
     if(!name||!(bal>0))return err('d-err')('Escribe a quién le debes y cuánto.');
     const day=parseInt(document.getElementById('d-day').value,10);
     F.debts.push({id:uid(),name,balance:bal,original:bal,rate:Math.max(0,num(document.getElementById('d-rate').value)||0),minPay:parseMoney(document.getElementById('d-min').value),dueDay:day>=1&&day<=31?Math.min(day,28):null});
-    UI.loanNew=false;save('finance');render();burst(['🤝','💸','✨'],12);toast('Préstamo agregado.');return;
+    {const d0=F.debts[F.debts.length-1],today=dkey(new Date());
+     addMove({type:'in',amount:bal,date:today,note:'Préstamo de '+name,loan:d0.id,plan:{fixed:0,card:0,debt:0,save:0,needs:0,own:0}});
+     addMove({type:'fund',amount:bal,date:today,note:'Préstamo de '+name,loan:d0.id})}
+    UI.loanNew=false;save('finance');render();burst(['🤝','💸','✨'],12);toast(`Préstamo agregado: entraron ${money(bal)} al Fondo.`);return;
   }
   if(f.id==='f-goal'){
     const name=document.getElementById('g-name').value.trim(),tg=parseMoney(document.getElementById('g-target').value);
