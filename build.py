@@ -17,7 +17,7 @@ i=s.rindex('</script>'); s=s[:i]+'\n'+alerts+'\n'+s[i:]
 # render: login + nav hide
 R("function render(){\n  const tab=UI.tab;","function render(){\n  const tab=UI.tab;\n  document.querySelector('nav.tabs').hidden=!!UI.auth;\n  const fabEl=document.getElementById('fab');if(fabEl)fabEl.hidden=!!UI.auth;\n  if(UI.auth){const n0=new Date();document.getElementById('pagetitle').textContent='Ritmo';document.getElementById('dateline').textContent=longDate(dkey(n0));document.getElementById('clock').textContent=fmt(n0.getHours()*60+n0.getMinutes());setSync('','Entra para sincronizar');document.getElementById('view').innerHTML=vLogin();return}")
 R("function vAjustes(){","function vAjustesBase(){")
-R("function vBien(){","function vAjustes(){return accountCard()+notifPermissionCard()+vAjustesBase()}\nfunction vBien(){")
+R("function vBien(){","function vAjustes(){let nc='';try{nc=notifPermissionCard()}catch(e){}return groupSettings(accountCard()+nc+vAjustesBase())}\nfunction vBien(){")
 # handlers
 R("""    case 'go':location.hash""","""    case 'login':doAuth('login');break;
     case 'signup':doAuth('signup');break;
