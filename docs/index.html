@@ -412,7 +412,8 @@ details.more[open] summary{margin-bottom:8px}
   --c-sleep:#BDB8F0; --c-wind:#D5C2F2; --c-commute:#D2CCE8; --c-meal:#F9B2C1; --c-routine:#FFDD94; --c-pause:#BFE9E2;
 }
 html,body{background:var(--bg)}
-body{background:radial-gradient(900px 500px at 110% -10%,#FFE3EC 0%,transparent 60%),radial-gradient(800px 600px at -20% 40%,#E7F6EE 0%,transparent 55%),var(--bg);background-attachment:fixed}
+body{background:var(--bg)}
+body::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(900px 500px at 110% -10%,#FFE3EC 0%,transparent 60%),radial-gradient(800px 600px at -20% 40%,#E7F6EE 0%,transparent 55%);transform:translateZ(0)}
 
 /* Cabecera: un cielo pastel que cambia con la hora */
 .wrap>.top{--sky:linear-gradient(160deg,#FFD7BF 0%,#FFBFD0 55%,#F9D9F0 100%);--orb:#FFE89A;--orb-glow:rgba(255,226,140,.65);
@@ -541,6 +542,14 @@ html.still .coinrain span{animation:coinfall 1.4s cubic-bezier(.4,.1,.6,1) forwa
 .loan.paid .ring{background:conic-gradient(var(--ok) 100%,transparent 0)}
 .lmain{display:flex;flex-direction:column;line-height:1.25}.lmain small{color:var(--muted)}
 .loanform{margin-top:12px;padding:14px;border-radius:18px;background:var(--sunk);animation:rise .3s ease-out}
+
+/* rendimiento al hacer scroll */
+:root{--shadow:0 6px 18px rgba(228,111,140,.10);--shadow-sm:0 3px 10px rgba(228,111,140,.09)}
+.wrap>.top{box-shadow:0 8px 20px rgba(240,150,170,.18)}
+.now,.hero-money{box-shadow:0 8px 20px rgba(228,111,140,.14)}
+nav.tabs{box-shadow:0 6px 18px rgba(228,111,140,.14);transform:translateZ(0)}
+.fab{box-shadow:0 6px 16px rgba(240,140,150,.38);transform:translateZ(0)}
+.card,.setg{contain:layout paint}
 </style>
 
 <div class="wrap" id="app">
@@ -1420,7 +1429,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:14</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:19</p>`;
   h+=FS;
   return h;
 }
@@ -1735,7 +1744,7 @@ function pockets(){
     {k:'own',n:'Para ti',ic:'✨',have:own,need:0}];
 }
 function cascadeCard(){
-  const P=pockets(),E=expectedIncome(),sim=UI.sim!=null?UI.sim:E,S=splitPlan(sim);
+  const P=pockets(),E=expectedIncome(),sim=UI.sim||0,S=splitPlan(sim);
   const flow={debt:S.debt,fixed:S.fixed,card:S.card,fund:S.fund,save:S.save,own:S.own};
   const tank=p=>{const full=p.need>0?Math.min(100,p.have/p.need*100):(p.k==='debt'?100:Math.min(100,p.have/Math.max(1,E)*100));
     const done=p.need>0?p.have>=p.need:p.k==='debt';
@@ -2190,7 +2199,11 @@ function coinRain(n,set){
     c.style.left=(5+Math.random()*90)+'%';c.style.animationDelay=(Math.random()*.5)+'s';c.style.fontSize=(18+Math.random()*16)+'px';box.appendChild(c)}
   setTimeout(()=>box.remove(),2200);
 }
-setTimeout(()=>document.documentElement.classList.add('still'),12000);
+const SEEN=new Set();let stillT=null;
+function animateOnce(){const tab=(location.hash||'#ahora').slice(1),H=document.documentElement;clearTimeout(stillT);
+  if(SEEN.has(tab)){H.classList.add('still');return}
+  SEEN.add(tab);H.classList.remove('still');stillT=setTimeout(()=>H.classList.add('still'),4500)}
+animateOnce();window.addEventListener('hashchange',()=>{UI.sim=null;animateOnce()});
 function setPhase(){const h=new Date().getHours();document.documentElement.dataset.phase=h>=5&&h<11?'manana':h>=11&&h<16?'dia':h>=16&&h<19?'tarde':'noche'}
 setPhase();setInterval(setPhase,60000);
 setInterval(tick,1000);
