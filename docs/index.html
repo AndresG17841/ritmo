@@ -475,6 +475,22 @@ nav.tabs a.sel{box-shadow:0 6px 16px rgba(240,140,150,.32)}
 .stat{background:linear-gradient(160deg,#FFF1E8,#FCEAF1)}
 .stats .stat:nth-child(2){background:linear-gradient(160deg,#EAF7EF,#EEF6FD)}
 .stats .stat:nth-child(3){background:linear-gradient(160deg,#F0EBFD,#FDEBF2)}
+
+/* Bolsillos en cascada */
+.cascade .tanks{display:flex;flex-direction:column;gap:0;margin-top:8px}
+.tank{position:relative;border-radius:18px;background:var(--sunk);overflow:hidden;min-height:74px}
+.tk-fill{position:absolute;left:0;right:0;bottom:0;transition:height .8s cubic-bezier(.2,.8,.2,1);opacity:.9}
+.tk-debt .tk-fill{background:linear-gradient(180deg,#FFC2CC,#F7A3B2)}.tk-fixed .tk-fill{background:linear-gradient(180deg,#FFE3A8,#FFD07F)}
+.tk-card .tk-fill{background:linear-gradient(180deg,#CFE6FB,#A5D2F7)}.tk-save .tk-fill{background:linear-gradient(180deg,#CFF2DE,#ABE5C8)}.tk-own .tk-fill{background:linear-gradient(180deg,#E6DCFD,#C3B2F7)}
+.tk-in{position:relative;display:grid;grid-template-columns:34px 1fr auto;column-gap:10px;align-items:center;padding:12px 14px}
+.tk-ic{grid-row:1/span 2;font-size:1.4rem;text-align:center}
+.tk-in b{font-family:var(--display)}.tk-amt{font-family:var(--display);font-weight:700;font-size:1.15rem;text-align:right}
+.tk-in small{grid-column:2;color:rgba(47,42,62,.75)}
+.tk-drop{grid-column:3;grid-row:2;justify-self:end;align-self:start;white-space:nowrap;background:var(--ink);color:#fff;border-radius:999px;padding:2px 9px;font-size:.75rem;font-weight:700;box-shadow:var(--shadow-sm)}
+.tank.done .tk-amt::after{content:" ✓";color:var(--ok)}
+.tk-arrow{display:block;height:16px;width:2px;margin:0 auto;background:repeating-linear-gradient(180deg,var(--muted) 0 3px,transparent 3px 6px);opacity:.5}
+.simrow{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
+.simrow input{font-family:var(--display);font-weight:700;font-size:1.1rem}
 </style>
 
 <div class="wrap" id="app">
@@ -1339,7 +1355,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 23:08</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 23:34</p>`;
   return h;
 }
 function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
@@ -1532,9 +1548,10 @@ function expectedIncome(){
   return Math.round((base+done.reduce((a,b)=>a+b,0))/(1+done.length));
 }
 function ownBank(){
-  const F=fin();const ins=F.moves.filter(x=>x.type==='in').reduce((a,x)=>a+incPlan(x).own,0);
-  const outs=F.moves.filter(x=>(x.type==='out'&&moveKind(x)==='own')||(x.type==='use'&&x.from==='own')).reduce((a,x)=>a+x.amount,0);
-  return ins-outs;
+  const F=fin();const ins=F.moves.filter(x=>x.type==='in').reduce((a,x)=>{const p=incPlan(x);return a+p.own+(p.needs||0)},0);
+  const outs=F.moves.filter(x=>(x.type==='out'&&!(x.fixedId||x.fixedPaid))||(x.type==='use'&&(x.from==='own'||x.from==='needs'))).reduce((a,x)=>a+x.amount,0);
+  const back=F.moves.filter(x=>x.type==='use'&&x.from==='save'&&x.to==='own').reduce((a,x)=>a+x.amount,0);
+  return ins-outs+back;
 }
 function obligations(){
   const F=fin(),c=card(),N=envNeeds();
@@ -1604,21 +1621,44 @@ function monthState(mk){
   return {inc,plan,needsSpent,fixedSpent,ownSpent,needsBud:plan.needs,ownBud:plan.own,needsLeft:plan.needs-needsSpent,ownLeft:plan.own-ownSpent,daysLeft,byCat,
     paid:mv.filter(x=>x.type==='debt').reduce((a,x)=>a+x.amount,0),saved:mv.filter(x=>x.type==='save').reduce((a,x)=>a+x.amount,0)};
 }
-/* Reparto en cascada: obligaciones que faltan → tarjeta → porcentajes con lo que queda */
+/* Cascada: 1) deudas (todo hasta saldarlas) → 2) mensualidades del mes → 3) tarjeta
+   → 4) lo que sobra: mitad ahorro, mitad para ti. */
 function splitPlan(a){
-  const F=fin(),O=obligations();
-  const E=expectedIncome(),so=monthState().inc;
-  const remainingInc=Math.max(E-so,a);
-  const need=O.fixed+O.card;
-  const pct=need>0?Math.min(1,need/remainingInc):0;
-  const ob=Math.round(a*pct);
-  const fixed=need>0?Math.round(ob*O.fixed/need):0;const cardA=ob-fixed;let r=a-ob;
-  const tg=debtTargets()[0];const prio=tg&&tg.priority;
-  const s=F.split;const tot=s.debt+s.save+s.needs+s.own||100;
-  let debt=tg?Math.round(r*s.debt/tot):0,save=Math.round(r*(s.save+(tg?0:s.debt))/tot);
-  if(prio){debt=Math.min(tg.balance,debt+save);save=Math.round(r*(s.save+s.debt)/tot)-debt;if(save<0)save=0}
-  const needs=Math.round(r*s.needs/tot);const own=Math.max(0,r-debt-save-needs);
-  return {fixed,card:cardA,debt,save,needs,own,target:tg?tg.id:null,targetName:tg?tg.name:'',prio:!!prio,pct:Math.round(pct*100),E};
+  const F=fin(),c=card(),N=envNeeds();let r=a;
+  const debts=[];for(const d of debtTargets()){if(r<=0)break;const x=Math.min(r,d.balance);if(x>0){debts.push({id:d.id,name:d.name,a:x});r-=x}}
+  const debt=debts.reduce((t,x)=>t+x.a,0);
+  const fixed=Math.min(r,N.fixed);r-=fixed;
+  const cardA=Math.min(r,c?Math.max(0,cardDueAll(c)-F.env.card):0);r-=cardA;
+  const save=Math.round(r/2),own=r-save;
+  return {debts,debt,target:debts[0]?debts[0].id:null,targetName:debts.map(x=>x.name).join(', '),prio:debt>0,
+    fixed,card:cardA,save,needs:0,own,pct:a>0?Math.round((debt+fixed+cardA)/a*100):0,E:expectedIncome()};
+}
+function cardDueAll(c){return c&&c.balance>0?(c.minPay||0):0}
+/* Bolsillos: cuánto hay en cada parte de tu plata y cuánto le falta */
+function pockets(){
+  const F=fin(),c=card(),N=envNeeds();
+  const debtLeft=debtTargets().reduce((t,d)=>t+d.balance,0);
+  const fp=fixedPendingTotal(),cd=cardDueAll(c);
+  const saved=F.goals.reduce((t,g)=>t+g.saved,0);
+  return [
+    {k:'debt',n:'Deudas',ic:'⛓',have:0,need:debtLeft,note:debtLeft>0?`Debes ${money(debtLeft)}: todo lo que entre va aquí primero`:'Sin deudas ✓'},
+    {k:'fixed',n:'Mensualidades',ic:'🏠',have:Math.min(F.env.fixed,fp),need:fp,note:fp<=0?'Todo pagado este mes ✓':N.fixed<=0?'Ya está apartado ✓':`Faltan ${money(N.fixed)}`},
+    {k:'card',n:'Tarjeta',ic:'💳',have:Math.min(F.env.card,cd),need:cd,note:cd<=0?'Sin deuda: ese % es para ti ✓':(F.env.card>=cd?'Lista para pagar ✓':`Faltan ${money(cd-F.env.card)}${c&&c.nextDue?' · paga el '+niceDate(c.nextDue):''}`)},
+    {k:'save',n:'Ahorro',ic:'🌱',have:saved,need:0,note:'La mitad de lo que sobra'},
+    {k:'own',n:'Para ti',ic:'✨',have:ownBank(),need:0,note:'La otra mitad: de aquí salen tus gastos'}];
+}
+function cascadeCard(){
+  const P=pockets(),E=expectedIncome(),sim=UI.sim!=null?UI.sim:E,S=splitPlan(sim);
+  const flow={debt:S.debt,fixed:S.fixed,card:S.card,save:S.save,own:S.own};
+  const tank=p=>{const full=p.need>0?Math.min(100,p.have/p.need*100):(p.k==='debt'?100:Math.min(100,p.have/Math.max(1,E)*100));
+    const done=p.need>0?p.have>=p.need:p.k==='debt';
+    return `<div class="tank tk-${p.k}${done?' done':''}"><div class="tk-fill" style="height:${p.k==='debt'&&p.need>0?6:Math.max(6,full)}%"></div>
+      <div class="tk-in"><span class="tk-ic">${p.ic}</span><b>${p.n}</b><span class="tk-amt">${p.k==='debt'?(p.need>0?money(p.need):'$0'):money(p.have)}</span><small>${esc(p.note)}</small>
+      ${flow[p.k]>0?`<span class="tk-drop">+${money(flow[p.k])}</span>`:''}</div></div>`};
+  return `<section class="card cascade"><div class="row" style="justify-content:space-between;align-items:baseline"><h3>Tus bolsillos</h3><small class="muted">la plata cae en orden ↓</small></div>
+    <div class="tanks">${P.map(tank).join('<i class="tk-arrow"></i>')}</div>
+    <div class="simrow"><label class="f">Si me entran<input id="sim-amt" inputmode="numeric" value="${money(sim).replace(/\s/g,' ')}"></label>
+    <p class="muted">${S.debt>0?`Todo lo que pueda va primero a tus deudas (${money(S.debt)}). `:''}${S.fixed>0?`${money(S.fixed)} a mensualidades. `:''}${S.card>0?`${money(S.card)} a la tarjeta. `:''}${S.save+S.own>0?`Lo que sobra se parte: ${money(S.save)} ahorro y ${money(S.own)} para ti.`:'No sobra nada para repartir todavía.'}</p></div></section>`;
 }
 function shortfalls(){
   const F=fin(),c=card(),today=dkey(new Date()),out=[];
@@ -1694,13 +1734,17 @@ function fixedList(compact){
 function buyCheck(){
   const C=UI.buy;if(!C)return '';
   const M=monthState(),F=fin();
-  const left=C.kind==='own'?ownBank():M.needsLeft;const after=left-C.price;
+  const own=Math.max(0,ownBank()),saved=F.goals.reduce((t,g)=>t+g.saved,0),E=expectedIncome();
+  const S=splitPlan(E),perMonth=S.own; // lo que te queda para ti en un mes normal
+  const fromOwn=Math.min(own,C.price),fromSave=Math.min(saved,C.price-fromOwn),gap=C.price-fromOwn-fromSave;
+  const left=own,after=own-C.price;
   let verdict,cls,detail;
-  if(M.inc<=0&&!(C.kind==='own'&&left>0)){verdict='No sé todavía';cls='casi';detail='No has registrado ingresos este mes, así que no tengo con qué comparar.'}
-  else if(after>=0){verdict='Te alcanza';cls='bien';detail=C.kind==='own'?`De lo que llevas acumulado para ti te quedarían ${money(after)}.`:`Te quedarían ${money(after)} para el día a día hasta fin de mes.`}
-  else{verdict='Te descuadra';cls='riesgo';detail=C.kind==='own'?`Te faltan ${money(-after)}: llevas ${money(left)} acumulado para ti.`:`Te pasas por ${money(-after)} de tu presupuesto del día a día este mes.`}
+  if(fromOwn>=C.price){verdict='Te alcanza';cls='bien';detail=`Sale de lo tuyo y te quedan ${money(own-C.price)}. Eso es el ${Math.round(C.price/Math.max(1,E)*100)}% de lo que ganas en un mes.`}
+  else if(gap<=0){verdict='Te alcanza, pero toca ahorro';cls='casi';detail=`${money(fromOwn)} de lo tuyo + ${money(fromSave)} del ahorro.`}
+  else{const m=perMonth>0?Math.ceil(gap/perMonth):null;verdict='Hoy no te alcanza';cls='riesgo';
+    detail=`Te faltan ${money(gap)} aun usando lo tuyo y el ahorro. ${m?`Con lo que te queda para ti cada mes (~${money(perMonth)}), lo juntas en ${m===1?'1 mes':m+' meses'}.`:'Primero hay que salir de las deudas: mientras debas, no sobra para ti.'}`}
   const top=goalsSorted().find(g=>goalInfo(g).left>0);const perG=top?Math.max(goalInfo(top).pace,goalInfo(top).need||0):0;
-  const extra=after<0&&top&&perG>0?`<p class="muted">Si lo sacas del ahorro, la meta "${esc(top.name)}" se atrasa unas ${Math.max(1,Math.round(-after/perG*4.3))} semanas.</p>`:'';
+  const extra=fromSave>0&&top&&perG>0?`<p class="muted">Sacar del ahorro atrasa "${esc(top.name)}" unas ${Math.max(1,Math.round(fromSave/perG*4.3))} semanas.</p>`:'';
   const big=C.kind==='own'&&M.ownBud>0&&C.price>M.ownBud*0.25;
   return `<div class="alert ${cls==='bien'?'calm':cls==='riesgo'?'':'warn'}"><b>${verdict}${C.name?': '+esc(C.name):''} (${money(C.price)})</b><span>${detail}</span>${extra}
     ${big&&after>=0?'<span class="muted">Es una compra grande para tu mes. Si no es urgente, esperar 24 horas ayuda a saber si de verdad la quieres.</span>':''}
@@ -1782,6 +1826,7 @@ function vPlata(){
     const rd=realDebts();const debt=rd.reduce((a,d)=>a+d.balance,0);
     h+=`<section class="hero-money"><span class="label">Para ti, disponible</span><b class="big" data-count="${Math.round(own)}">${money(own)}</b>
       <div class="hm-row"><span><small>Entró este mes</small>${money(M.inc)} <em>de ~${money(E)}</em></span><span><small>Ahorrado</small>${money(saved)}</span>${debt>0?`<span><small>Deuda</small>${money(debt)}</span>`:''}</div></section>`;
+    h+=cascadeCard();
     // Por pagar
     const fx=fixedState();const rows=[];
     if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
@@ -1796,7 +1841,7 @@ function vPlata(){
     if(rows.length)h+=`<section class="card"><h3>Por pagar</h3><div class="plist">${rows.join('')}</div>${need>remE&&remE>0?`<p class="warnline">Este mes faltarían ${money(need-remE)}.</p>`:''}</section>`;
     // Este mes
     const bar=(lab,sp,bud)=>`<div class="mrow"><div class="row" style="justify-content:space-between"><b>${lab}</b><span class="mono">${money(Math.max(0,bud-sp))} <small class="muted">quedan</small></span></div>${finBar(sp,bud)}</div>`;
-    h+=`<section class="card"><h3>Este mes</h3>${bar('Día a día',M.needsSpent,M.needsBud)}${bar('Para ti',M.ownSpent,M.ownBud)}`;
+    h+=`<section class="card"><h3>Este mes</h3>${bar('Gastado de lo tuyo',M.ownSpent+M.needsSpent,M.ownBud+M.needsBud)}`;
     const es=Object.entries(M.byCat).sort((a,b)=>b[1]-a[1]).slice(0,4);
     if(es.length){const mx=es[0][1];h+=`<div class="stack" style="gap:6px;margin-top:4px">${es.map(([k,v])=>`<div class="catrow"><span>${esc(k)}</span><div class="bar"><i style="width:${v/mx*100}%;background:${CATS_OWN.includes(k)?'var(--warm)':'var(--accent)'}"></i></div><span class="mono">${money(v)}</span></div>`).join('')}</div>`}
     h+=`</section>`;
@@ -2022,6 +2067,7 @@ function updatePreview(){
   const f=factorFor(cat,state.tasks.items,state.config.settings,state.tasks.learn);
   el.textContent=est?`Con tu margen de ${f.f.toFixed(1)}× ${f.n?'(aprendido de '+f.n+' tareas)':'(mientras aprendo de ti)'} te reservo ${dur(est*60*f.f)}.`:'';
 }
+document.addEventListener('change',e=>{if(e.target&&e.target.id==='sim-amt'){UI.sim=parseMoney(e.target.value);render()}});
 function setPhase(){const h=new Date().getHours();document.documentElement.dataset.phase=h>=5&&h<11?'manana':h>=11&&h<16?'dia':h>=16&&h<19?'tarde':'noche'}
 setPhase();setInterval(setPhase,60000);
 setInterval(tick,1000);
@@ -2065,7 +2111,7 @@ document.addEventListener('click',e=>{
     case 'fin-apply':{const F=fin(),today=dkey(new Date());const P=UI.split.plan||splitPlan(UI.split.amount);
       F.env.fixed+=P.fixed;F.env.card+=P.card;
       const mv=F.moves.find(x=>x.id===UI.split.moveId);if(mv)mv.applied={fixed:P.fixed,card:P.card};
-      if(P.debt>0&&P.target)addMove({type:'debt',amount:P.debt,date:today,ref:P.target,note:'Del reparto'});
+      if(P.debts&&P.debts.length)P.debts.forEach(x=>addMove({type:'debt',amount:x.a,date:today,ref:x.id,note:'Del reparto'}));else if(P.debt>0&&P.target)addMove({type:'debt',amount:P.debt,date:today,ref:P.target,note:'Del reparto'});
       if(P.save>0){const al=allocSave(P.save);if(al.length)al.forEach(x=>addMove({type:'save',amount:x.a,date:today,ref:x.g.id,note:'Del reparto'}));else addMove({type:'save',amount:P.save,date:today,ref:'',note:'Del reparto'})}
       UI.split=null;save('finance');render();toast('Listo. Así tu plata trabaja para ti.');break}
     case 'fin-strat':fin().strategy=el.dataset.v;save('finance');render();break;
