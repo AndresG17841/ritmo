@@ -3,7 +3,9 @@ const NOTI={day:null,shown:{},snoozed:[],current:null};
 const DESK=window.ritmoDesktop||null;
 function alertsFor(P,di){
   const T=P.days[di||0];const out=[];if(!T||T.away)return out;
+  const act=state.tasks.active;
   for(const b of T.blocks){
+    if(b.type==='task'&&act&&(di||0)===0)continue; // ya estás en una tarea: no te pido otra
     if(b.type==='task'){
       const t=state.tasks.items.find(x=>x.id===b.taskId);
       const nth=T.blocks.filter(x=>x.type==='task'&&x.taskId===b.taskId&&x.start<b.start).length;
@@ -15,8 +17,8 @@ function alertsFor(P,di){
     if(b.type==='wind')out.push({key:'wind',at:b.start,kind:'wind',big:true,title:'Pantallas fuera',body:`A las ${fmt(b.end)} a la cama. Lo de mañana ya está en el plan.`,end:b.end,buttons:[['ok','Entendido'],['shutdown',`Apagar el PC a las ${fmt(b.end)}`],['snooze10','En 10 min']]});
     if(b.type==='sleep'&&b.start>0)out.push({key:'bed',at:b.start,kind:'bed',big:true,title:'A la cama',body:'Ya es hora de dormir. Todo lo pendiente tiene su espacio.',buttons:[['ok','Buenas noches']]});
     if(b.type==='free')out.push({key:`free:${b.start}`,at:b.start,kind:'soft',big:false,title:'Tiempo libre, sin culpa',body:`Este rato es tuyo, hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
-    if(b.type==='meal')out.push({key:`meal:${b.start}`,at:b.start,kind:'soft',big:true,title:`Hora de comer: ${b.title.toLowerCase()}`,body:`${b.sub?b.sub+'. ':''}Tienes hasta las ${fmt(b.end)}. Deja lo que estás haciendo y come bien.`,buttons:[['ok','Voy a comer'],['snooze10','En 10 min']]});
-    if(b.type==='pause')out.push({key:`pause:${b.start}`,at:b.start,kind:'soft',big:true,title:'Pausa de 15 min',body:`Llevas 3 horas seguidas. Estírate y toma agua; sigues a las ${fmt(b.end)}.`,buttons:[['ok','Listo'],['snooze10','Termino en 10 min']]});
+    if(b.type==='meal')out.push({key:`meal:${T.k}:${/cena/i.test(b.title)?'cena':'almuerzo'}`,at:b.start,kind:'soft',big:true,title:`Hora de comer: ${b.title.toLowerCase()}`,body:`${b.sub?b.sub+'. ':''}Tienes hasta las ${fmt(b.end)}. Deja lo que estás haciendo y come bien.`,buttons:[['ok','Voy a comer'],['snooze10','En 10 min']]});
+    if(b.type==='pause')out.push({key:`pause:${T.k}:${T.blocks.filter(x=>x.type==='pause'&&x.start<b.start).length}`,at:b.start,kind:'soft',big:true,title:'Pausa de 15 min',body:`Llevas 3 horas seguidas. Estírate y toma agua; sigues a las ${fmt(b.end)}.`,buttons:[['ok','Listo'],['snooze10','Termino en 10 min']]});
     if(b.type==='rest')out.push({key:`rest:${b.start}`,at:b.start,kind:'soft',big:false,title:'Descanso al llegar',body:`No tienes que hacer nada hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
   }
   for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:true,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min'],['ping-skip','Ahora no puedo']]});
@@ -257,3 +259,15 @@ async function pushTest(){
   const {error}=await sb.from('ritmo_alerts').insert({user_id:sbUser.id,key:a.key,at:new Date(at).toISOString(),payload:Object.assign(lite(a),{id:nId(a.key),at})});
   toast(error?'No pude programar la prueba: '+error.message:'Listo. Cierra la app (deslízala fuera de recientes) y espera unos 2 minutos.');
 }
+
+// Mini reproductor del cronómetro en el PC
+let MINIK=null;
+function syncMini(){
+  if(!DESK||!DESK.mini)return;const a=state.tasks.active;
+  const t=a&&state.tasks.items.find(x=>x.id===a.taskId);const k=t?t.id+':'+a.start:'';
+  if(k===MINIK)return;MINIK=k;DESK.mini(t?{title:t.name,start:a.start}:null);
+}
+if(DESK&&DESK.onMiniAction)DESK.onMiniAction(a=>{
+  if(a==='stop'){const t=stopActive();save('tasks');render();if(t)toast('Guardé tu sesión.')}
+  else if(a==='done'){const t=stopActive();save('tasks');if(t){UI.finishing=t.id;location.hash='tareas';render()}}
+});

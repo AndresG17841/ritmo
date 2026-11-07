@@ -816,6 +816,7 @@ function buildPlanPass(state,now,quota,wl,we){
     const dw=new Date(k+'T12:00:00').getDay(),isWk=dw===0||dw===6;
     const L=dayLayout(k,planCfg(state),state.journal.days,i===0?nowMin:null,isWk?Math.max(0,we):wl);
     L.i=i;thread.streak=0;
+    if(i===0&&state.tasks.active){const ax=tasks.find(y=>y.id===state.tasks.active.taskId);if(ax)thread={x:ax,streak:0}}
     for(const ch of L.chunks){
       let s=ch.start;const e=ch.end;
       while(e-s>=15){
@@ -2097,7 +2098,7 @@ function finForm(f){
 
 /* ===== Render ===== */
 function render(){
-  const tab=UI.tab;
+  const tab=UI.tab;if(typeof syncMini==='function')try{syncMini()}catch(e){}
   document.querySelectorAll('nav.tabs a').forEach(a=>a.classList.toggle('sel',a.dataset.tab===tab));
   const titles={ahora:'Ahora',dia:'Tu día',tareas:'Tareas',bien:'Bienestar',plata:'Finanzas',ajustes:'Ajustes'};
   document.getElementById('pagetitle').textContent=titles[tab];

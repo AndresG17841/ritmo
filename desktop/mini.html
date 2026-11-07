@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es"><head><meta charset="utf-8"><title>Ritmo</title>
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; script-src 'self' 'unsafe-inline'">
+<style>
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;font-family:"Segoe UI",system-ui,sans-serif;-webkit-user-select:none;user-select:none;overflow:hidden}
+body{display:flex;align-items:center;gap:12px;padding:0 12px 0 14px;color:#2F2A3E;
+  background:linear-gradient(120deg,#D6C8FB 0%,#F6C9DD 55%,#FFD9C7 100%);border-radius:0;-webkit-app-region:drag}
+.disc{width:46px;height:46px;border-radius:50%;flex:none;display:grid;place-items:center;
+  background:conic-gradient(#2F2A3E var(--p,0%),rgba(255,255,255,.6) 0);transition:background .5s}
+.disc span{width:36px;height:36px;border-radius:50%;background:#FFF7EF;display:grid;place-items:center;font-size:18px}
+.disc.spin span{animation:spin 6s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.info{flex:1;min-width:0;display:flex;flex-direction:column;line-height:1.15}
+.t{font-weight:700;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c{font-family:Consolas,monospace;font-size:20px;font-weight:700;letter-spacing:.02em}
+.btns{display:flex;gap:6px;-webkit-app-region:no-drag}
+button{width:34px;height:34px;border-radius:50%;border:0;background:rgba(255,255,255,.7);color:#2F2A3E;font-size:15px;cursor:pointer;display:grid;place-items:center}
+button:hover{background:#fff}
+button.main{background:#2F2A3E;color:#fff}
+</style></head><body>
+<div class="disc spin" id="disc"><span>🎧</span></div>
+<div class="info"><span class="t" id="t">Ritmo</span><span class="c" id="c">00:00</span></div>
+<div class="btns">
+  <button class="main" title="Pausar y guardar" onclick="ritmoDesktop.miniAct('stop')">⏸</button>
+  <button title="Terminé la tarea" onclick="ritmoDesktop.miniAct('done')">✓</button>
+  <button title="Abrir Ritmo" onclick="ritmoDesktop.miniAct('open')">↗</button>
+</div>
+<script>
+let d = null;
+const p2 = (n) => String(n).padStart(2, '0');
+function tick() {
+  if (!d) return;
+  const s = Math.max(0, Math.floor((Date.now() - d.start) / 1000));
+  const h = Math.floor(s / 3600), m = Math.floor(s % 3600 / 60), x = s % 60;
+  document.getElementById('c').textContent = (h ? h + ':' + p2(m) : p2(m)) + ':' + p2(x);
+  document.getElementById('disc').style.setProperty('--p', ((s % 3600) / 36) + '%');
+}
+ritmoDesktop.onMiniData((x) => { d = x; document.getElementById('t').textContent = x.title || 'Ritmo'; tick(); });
+setInterval(tick, 1000);
+</script>
+</body></html>

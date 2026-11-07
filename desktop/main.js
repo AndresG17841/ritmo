@@ -69,6 +69,22 @@ ipcMain.on('popup-action', (_e, msg) => {
   if (popup && !popup.isDestroyed()) { popup.__done = true; popup.close(); }
 });
 ipcMain.on('show-main', () => showMain());
+
+// Mini reproductor: el cronómetro de la tarea en una ventanita encima de todo
+let mini = null;
+ipcMain.on('mini', (_e, d) => {
+  if (!d) { if (mini && !mini.isDestroyed()) mini.close(); mini = null; return; }
+  if (mini && !mini.isDestroyed()) { mini.webContents.send('mini-data', d); return; }
+  const a = screen.getPrimaryDisplay().workArea;
+  mini = new BrowserWindow({ width: 340, height: 78, x: a.x + a.width - 356, y: a.y + a.height - 94, frame: false, resizable: false,
+    alwaysOnTop: true, skipTaskbar: true, show: false, backgroundColor: '#FFF7EF', title: 'Ritmo', icon: icon(256),
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true } });
+  mini.setAlwaysOnTop(true, 'floating'); mini.setVisibleOnAllWorkspaces(true);
+  mini.loadFile(path.join(__dirname, 'mini.html'));
+  mini.webContents.once('did-finish-load', () => { mini.webContents.send('mini-data', d); mini.showInactive(); });
+  mini.on('closed', () => { mini = null; });
+});
+ipcMain.on('mini-action', (_e, act) => { if (act === 'open') showMain(); else if (win) win.webContents.send('mini-action', act); });
 ipcMain.on('shutdown-in', (_e, secs) => {
   const s = Math.max(60, Math.min(86400, parseInt(secs, 10) || 1800));
   exec(`shutdown /s /t ${s} /c "Ritmo: hora de dormir. Para cancelar, abre Ritmo > Ajustes > Cancelar apagado."`);
