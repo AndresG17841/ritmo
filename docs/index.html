@@ -1446,7 +1446,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:40</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:46</p>`;
   h+=FS;
   return h;
 }
@@ -1979,7 +1979,7 @@ function vPlata(){
     if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
       rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>${c.nextDue?niceDate(c.nextDue):''} · ${ok?'apartado ✓':'apartado '+money(ap)}</small></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
     for(const x of fx){
-      if(x.variable)rows.push(`<div class="prow"><span class="pdot"></span><span class="pmain"><b>${esc(x.name)}</b><small>Llevas ${money(x.spent)} de ~${money(x.est)}</small></span><span class="pamt"></span><button class="small" data-act="fix-add" data-id="${x.id}">Anotar</button></div>`);
+      if(x.variable)rows.push(`<div class="prow"><span class="pdot"></span><span class="pmain"><b>${esc(x.name)}</b><small>${x.spent?"Este mes: "+money(x.spent):"Cuando toque pagar"}</small></span><span class="pamt"></span><button class="small primary" data-act="fix-add" data-id="${x.id}">Pagar</button></div>`);
       else rows.push(`<div class="prow ${x.paid?'done':''}"><span class="pdot ${x.paid?'ok':''}"></span><span class="pmain"><b>${esc(x.name)}</b>${x.day?`<small>el ${x.day}</small>`:''}</span><span class="pamt">${money(x.amount)}</span>${x.paid?`<button class="small ghost" data-act="fix-undo" data-id="${x.id}">✓ Pagado</button>`:`<button class="small primary" data-act="pay-open" data-k="fixed" data-id="${x.id}">Pagar</button>`}</div>`);
     }
     h+=rows.length?`<section class="card"><div class="plist">${rows.join('')}</div></section>`:`<section class="card empty-art"><div class="art">🌤</div><b>Nada por pagar</b></section>`;
@@ -2067,9 +2067,15 @@ function addMove(m){
   if(r&&m.type==='save')r.saved+=m.amount;
   const F2=fin();
   const fxv=m.type==='out'&&m.fixedId&&(F2.fixed.find(x=>x.id===m.fixedId)||{}).variable;
-  if(fxv){const fromFund=Math.min(Math.max(0,fundBal()),m.amount);const fromEnv=Math.min(F2.env.fixed,m.amount-fromFund);const extra=m.amount-fromFund-fromEnv;
-    m.envUsed=fromEnv;F2.env.fixed-=fromEnv;m.linked=m.linked||[];
-    if(fromFund+extra>0){const u={id:uid(),type:'use',from:'fund',amount:fromFund+extra,date:m.date,note:(m.cat||'Gasto')+' (del fondo)'};F2.moves.push(u);m.linked.push(u.id)}}
+  if(fxv){ // Universidad: se paga al revés de como se llena: lo tuyo → metas → fondo → mensualidades; lo que falte deja el fondo en negativo
+    let need=m.amount;m.linked=m.linked||[];const used=[];const lbl=(m.cat||'Universidad');
+    const use=(from,x,note)=>{if(x<=0)return;const u={id:uid(),type:'use',from,amount:x,date:m.date,note:lbl+' ('+note+')'};F2.moves.push(u);m.linked.push(u.id);need-=x;used.push([note,x])};
+    use('own',Math.min(need,Math.max(0,ownBank())),'de lo tuyo');
+    for(const g of goalsSorted().slice().reverse()){if(need<=0)break;const x=Math.min(need,g.saved);if(x>0){g.saved-=x;const u={id:uid(),type:'save',amount:-x,date:m.date,ref:g.id,note:lbl+' (de '+g.name+')'};F2.moves.push(u);m.linked.push(u.id);need-=x;used.push(['de '+g.name,x])}}
+    use('fund',Math.min(need,Math.max(0,fundBal())),'del fondo');
+    {const x=Math.min(need,F2.env.fixed);if(x>0){m.envUsed=x;F2.env.fixed-=x;need-=x;used.push(['de mensualidades',x])}}
+    use('fund',need,'del fondo, queda en negativo');
+    m.paidFrom=used;}
   else if(m.type==='out'&&(m.fixedId||m.fixedPaid)){m.envUsed=Math.min(F2.env.fixed,m.amount);F2.env.fixed-=m.envUsed}
   if(r&&m.type==='debt'){
     if(r.kind==='card'){m.envUsed=Math.min(F2.env.card,m.amount);F2.env.card-=m.envUsed;let left=m.amount;m.alloc=[];for(const p of r.purchases.slice().sort((a,b)=>a.date.localeCompare(b.date))){if(left<=0)break;const x=Math.min(left,p.left);p.left-=x;left-=x;m.alloc.push([p.id,x])}cardRecalc(r)}
@@ -2152,6 +2158,7 @@ function finForm(f){
       if(cat.startsWith('fx:')){const fx=F.fixed.find(x=>x.id===cat.slice(3));m.fixedId=cat.slice(3);cat=fx?fx.name:'Universidad'}m.cat=cat;
       if(UI.payWith==='card'){const c=ensureCard();const n=+document.getElementById('fin-cuotas').value||1;const p={id:uid(),date,amount:amt,cuotas:n,left:amt,note:note||cat};c.purchases=c.purchases||[];c.purchases.push(p);cardRecalc(c);m.pay='card';m.cardPid=p.id}}
     addMove(m);
+    if(m.paidFrom&&m.paidFrom.length)setTimeout(()=>toast('Pagado: '+m.paidFrom.map(([n,x])=>money(x)+' '+n).join(', ')+'.'),60);
     UI.amtDraft='';save('finance');if(T==='in'){UI.split={amount:amt,plan:m.plan,moveId:m.id};UI.sub.plata='resumen'}UI.preCat=null;render();
     let msg=T==='in'?'Anotado. Mira cómo repartirlo.':T==='debt'?'Pago anotado. La deuda bajó.':T==='save'?'Ahorro anotado.':m.pay==='card'?'Gasto anotado y sumado a la tarjeta.':'Gasto anotado.';
     if(T==='out'&&before&&before.inc>0){const left=(K==='own'?before.ownLeft:before.needsLeft)-amt;if(left<0)msg=`Anotado, pero te pasaste ${money(-left)} de tu presupuesto ${K==='own'?'para ti':'de obligatorios'}.`}
