@@ -1369,7 +1369,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 23:41</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 07/11 00:00</p>`;
   h+=FS;
   return h;
 }
@@ -1563,11 +1563,14 @@ function expectedIncome(){
   return done.length?Math.round(done.reduce((a,b)=>a+b,0)/done.length):base; // el supuesto solo mientras no haya meses reales
 }
 function ownBank(){
-  const F=fin();const ins=F.moves.filter(x=>x.type==='in').reduce((a,x)=>{const p=incPlan(x);return a+p.own+(p.needs||0)},0);
-  const outs=F.moves.filter(x=>(x.type==='out'&&!(x.fixedId||x.fixedPaid))||(x.type==='use'&&(x.from==='own'||x.from==='needs'))).reduce((a,x)=>a+x.amount,0);
+  const F=fin();const ins=F.moves.filter(x=>x.type==='in').reduce((a,x)=>{const p=incPlan(x);return a+p.own+(p.needs||0)+(p.cardIn||0)},0);
+  const outs=F.moves.filter(x=>(x.type==='out'&&!(x.fixedId||x.fixedPaid)&&x.kind!=='fund'&&x.pay!=='card')||(x.type==='use'&&(x.from==='own'||x.from==='needs'))).reduce((a,x)=>a+x.amount,0);
   const back=F.moves.filter(x=>x.type==='use'&&x.from==='save'&&x.to==='own').reduce((a,x)=>a+x.amount,0);
   return ins-outs+back;
 }
+/* Fondo de emergencia: mínimo 2 meses de ingreso, máximo 6 */
+function fundBal(){const F=fin();return F.moves.filter(x=>x.type==='fund').reduce((a,x)=>a+x.amount,0)-F.moves.filter(x=>(x.type==='use'&&x.from==='fund')||(x.type==='out'&&x.kind==='fund'&&x.pay!=='card')).reduce((a,x)=>a+x.amount,0)}
+function fundRange(){const E=expectedIncome();return {min:2*E,max:6*E}}
 function obligations(){
   const F=fin(),c=card(),N=envNeeds();
   let cardM=N.card;
@@ -1636,39 +1639,56 @@ function monthState(mk){
   return {inc,plan,needsSpent,fixedSpent,ownSpent,needsBud:plan.needs,ownBud:plan.own,needsLeft:plan.needs-needsSpent,ownLeft:plan.own-ownSpent,daysLeft,byCat,
     paid:mv.filter(x=>x.type==='debt').reduce((a,x)=>a+x.amount,0),saved:mv.filter(x=>x.type==='save').reduce((a,x)=>a+x.amount,0)};
 }
-/* Cascada: 1) deudas (todo hasta saldarlas) → 2) mensualidades del mes → 3) tarjeta
-   → 4) lo que sobra: mitad ahorro, mitad para ti. */
+/* Cascada: 1) mensualidades → 2) préstamos y tarjeta (préstamos antes si la tarjeta igual
+   alcanza a pagarse a tiempo) → 3) si ya no hay deudas: 30% para ti, 50% fondo, 20% metas
+   (el fondo baja a 25% después de 2 meses de ingreso y a 0% al llegar a 6). */
 function splitPlan(a){
-  const F=fin(),c=card(),N=envNeeds();let r=a;
-  const debts=[];for(const d of debtTargets()){if(r<=0)break;const x=Math.min(r,d.balance);if(x>0){debts.push({id:d.id,name:d.name,a:x});r-=x}}
-  const debt=debts.reduce((t,x)=>t+x.a,0);
+  const F=fin(),c=card(),N=envNeeds(),E=expectedIncome();let r=a;
   const fixed=Math.min(r,N.fixed);r-=fixed;
-  const cardA=Math.min(r,c?Math.max(0,cardDueAll(c)-F.env.card):0);r-=cardA;
-  const save=Math.round(r/2),own=r-save;
-  return {debts,debt,target:debts[0]?debts[0].id:null,targetName:debts.map(x=>x.name).join(', '),prio:debt>0,
-    fixed,card:cardA,save,needs:0,own,pct:a>0?Math.round((debt+fixed+cardA)/a*100):0,E:expectedIncome()};
+  const loans=debtTargets();const L=loans.reduce((t,d)=>t+d.balance,0);
+  const cardNeed=c&&c.balance>0?Math.max(0,(c.minPay||0)-F.env.card):0;
+  let loansFirst=true;
+  if(cardNeed>0&&L>0&&c.nextDue){const days=Math.max(0,daysBetween(dkey(new Date()),c.nextDue));
+    const future=Math.max(0,E-fixedMonthly())*Math.floor(days/30);loansFirst=r+future-L>=cardNeed}
+  const debts=[];let cardA=0;
+  const payLoans=()=>{for(const d of loans){if(r<=0)break;const x=Math.min(r,d.balance);if(x>0){debts.push({id:d.id,name:d.name,a:x});r-=x}}};
+  const payCardF=()=>{cardA=Math.min(r,cardNeed);r-=cardA};
+  if(loansFirst){payLoans();payCardF()}else{payCardF();payLoans()}
+  const debt=debts.reduce((t,x)=>t+x.a,0);
+  const owing=L-debt>0||cardNeed-cardA>0;
+  let own=0,fund=0,save=0;
+  if(r>0){
+    const fb=fundBal(),R2=fundRange();
+    let fs=fb<R2.min?50:fb<R2.max?25:0;
+    own=Math.round(r*0.30);fund=Math.min(Math.round(r*fs/100),Math.max(0,R2.max-fb));save=r-own-fund;
+    if(!F.goals.some(g=>goalInfo(g).left>0)){const room=Math.max(0,R2.max-fb-fund);const x=Math.min(save,room);fund+=x;own+=save-x;save=0}
+  }
+  return {debts,debt,target:debts[0]?debts[0].id:null,targetName:debts.map(x=>x.name).join(', '),prio:debt>0,loansFirst,owing,
+    fixed,card:cardA,cardIn:cardA,fund,save,needs:0,own,pct:a>0?Math.round((debt+fixed+cardA)/a*100):0,E};
 }
+function fixedMonthly(){return fixedState().reduce((t,x)=>t+(x.variable?x.est:x.amount),0)}
 function cardDueAll(c){return c&&c.balance>0?(c.minPay||0):0}
 /* Bolsillos: cuánto hay en cada parte de tu plata y cuánto le falta */
 function pockets(){
   const F=fin(),c=card(),N=envNeeds();
   const debtLeft=debtTargets().reduce((t,d)=>t+d.balance,0);
-  const fp=fixedPendingTotal(),cd=cardDueAll(c);
-  const saved=F.goals.reduce((t,g)=>t+g.saved,0);
+  const fp=fixedPendingTotal(),cd=c&&c.balance>0?(c.minPay||0):0,R2=fundRange(),fb=fundBal();
+  const saved=F.goals.reduce((t,g)=>t+g.saved,0),own=ownBank();
   return [
-    {k:'debt',n:'Deudas',ic:'⛓',have:0,need:debtLeft,note:debtLeft>0?`Debes ${money(debtLeft)}: todo lo que entre va aquí primero`:'Sin deudas ✓'},
-    {k:'fixed',n:'Mensualidades',ic:'🏠',have:Math.min(F.env.fixed,fp),need:fp,note:fp<=0?'Todo pagado este mes ✓':N.fixed<=0?'Ya está apartado ✓':`Faltan ${money(N.fixed)}`},
-    {k:'card',n:'Tarjeta',ic:'💳',have:Math.min(F.env.card,cd),need:cd,note:cd<=0?'Sin deuda: ese % es para ti ✓':(F.env.card>=cd?'Lista para pagar ✓':`Faltan ${money(cd-F.env.card)}${c&&c.nextDue?' · paga el '+niceDate(c.nextDue):''}`)},
-    {k:'save',n:'Ahorro',ic:'🌱',have:saved,need:0,note:'La mitad de lo que sobra'},
-    {k:'own',n:'Para ti',ic:'✨',have:ownBank(),need:0,note:'La otra mitad: de aquí salen tus gastos'}];
+    {k:'fixed',n:'Mensualidades',ic:'🏠',have:Math.min(F.env.fixed,fp),need:fp},
+    {k:'debt',n:'Préstamos',ic:'⛓',have:0,need:debtLeft},
+    {k:'card',n:'Tarjeta',ic:'💳',have:Math.min(F.env.card,cd),need:cd,sub:'sale de lo tuyo'},
+    {k:'fund',n:'Fondo',ic:'🛟',have:fb,need:R2.min,max:R2.max,sub:fb>=R2.max?'tope ✓':fb>=R2.min?`mínimo ✓ · tope ${money(R2.max)}`:''},
+    {k:'save',n:'Metas',ic:'🌱',have:saved,need:0},
+    {k:'own',n:'Para ti',ic:'✨',have:own,need:0}];
 }
 function cascadeCard(){
   const P=pockets(),E=expectedIncome(),sim=UI.sim!=null?UI.sim:E,S=splitPlan(sim);
-  const flow={debt:S.debt,fixed:S.fixed,card:S.card,save:S.save,own:S.own};
+  const flow={debt:S.debt,fixed:S.fixed,card:S.card,fund:S.fund,save:S.save,own:S.own};
   const tank=p=>{const full=p.need>0?Math.min(100,p.have/p.need*100):(p.k==='debt'?100:Math.min(100,p.have/Math.max(1,E)*100));
     const done=p.need>0?p.have>=p.need:p.k==='debt';
     return `<div class="tank tk-${p.k}${done?' done':''}"><div class="tk-fill" style="height:${p.k==='debt'&&p.need>0?6:Math.max(6,full)}%"></div>
-      <div class="tk-in"><span class="tk-ic">${p.ic}</span><b>${p.n}</b><span class="tk-amt">${p.k==='debt'?(p.need>0?money(p.need):'$0'):money(p.have)}</span><small>${p.need>0&&p.k!=='debt'&&p.have<p.need?'de '+money(p.need):''}</small>
+      <div class="tk-in"><span class="tk-ic">${p.ic}</span><b>${p.n}</b><span class="tk-amt">${p.k==='debt'?(p.need>0?money(p.need):'$0'):money(p.have)}</span><small>${p.sub||(p.need>0&&p.k!=='debt'&&p.have<p.need?'de '+money(p.need):'')}</small>
       ${flow[p.k]>0?`<span class="tk-drop">+${money(flow[p.k])}</span>`:''}</div></div>`};
   return `<section class="card cascade"><h3>Tus bolsillos</h3>
     <div class="tanks">${P.map(tank).join('<i class="tk-arrow"></i>')}</div>
@@ -1768,21 +1788,23 @@ function payTarget(P){
   const F=fin();
   if(P.kind==='fixed'){const x=F.fixed.find(f=>f.id===P.id);return x?{name:x.name,due:x.amount,env:F.env.fixed}:null}
   const d=F.debts.find(d=>d.id===P.id);if(!d)return null;
-  return {name:d.name,due:d.kind==='card'?d.minPay:(d.minPay||d.balance),env:d.kind==='card'?F.env.card:0,max:d.balance};
+  return {name:d.name,due:d.kind==='card'?d.minPay:(d.minPay||d.balance),env:d.kind==='card'?F.env.card:0,max:d.balance,isCard:d.kind==='card'};
 }
 function payCard(){
   const P=UI.pay;const T=payTarget(P);if(!T)return '';
   const F=fin(),amt=P.amount!=null?P.amount:T.due;
   const fromEnv=Math.min(T.env,amt),rest=amt-fromEnv;
-  const src=P.src||'own';const goals=goalsSorted().filter(g=>g.saved>0);
-  const avail={own:ownBank(),save:goals.reduce((a,g)=>a+g.saved,0),needs:Math.max(0,monthState().needsLeft)};
-  const lab={own:'De lo mío',save:'De mis ahorros',needs:'Del día a día'};
+  const goals=goalsSorted().filter(g=>g.saved>0);
+  const avail={own:Math.max(0,ownBank()-(P.kind==='debt'&&T.isCard?fromEnv:0)),fund:Math.max(0,fundBal()),save:goals.reduce((a,g)=>a+g.saved,0)};
+  const src=P.src||(T.isCard?(avail.own>=rest?'own':'fund'):'fund');
+  const lab={own:'De lo mío',fund:'Del fondo',save:'De mis metas'};
+  const srcs=T.isCard?['own','fund','save']:['fund','save'];
   return `<section class="now t-task"><span class="kind">Pagar</span><h2>${esc(T.name)}</h2>
     <form id="f-pay" class="stack"><input id="p-amt" class="amt" inputmode="numeric" value="${amt}" aria-label="Cuánto pagaste"></form>
     <div class="stack" style="gap:4px">
       ${fromEnv>0?`<p><b>${money(fromEnv)}</b> de lo apartado</p>`:''}
       ${rest>0?`<p><b>${money(rest)}</b> ${fromEnv>0?'más, ¿de dónde?':'¿de dónde?'}</p>
-        <div class="row">${['own','save','needs'].map(k=>`<button type="button" class="chip ${src===k?'sel':''}" data-act="pay-src" data-v="${k}">${lab[k]} <span class="muted">(${money(avail[k])})</span></button>`).join('')}</div>
+        <div class="row">${srcs.map(k=>`<button type="button" class="chip ${src===k?'sel':''}" data-act="pay-src" data-v="${k}">${lab[k]} <span class="muted">(${money(avail[k])})</span></button>`).join('')}</div>
         ${src==='save'&&goals.length>1?`<label class="f">De qué meta<select id="p-goal">${goals.map(g=>`<option value="${g.id}" ${P.goal===g.id?'selected':''}>${esc(g.name)} (${money(g.saved)})</option>`).join('')}</select></label>`:''}
         ${avail[src]<rest?`<small class="danger">No alcanza: solo hay ${money(Math.max(0,avail[src]))}.</small>`:''}`:'<small class="muted">Cubierto con lo apartado.</small>'}
     </div>
@@ -1791,7 +1813,7 @@ function payCard(){
 function doPay(){
   const F=fin(),P=UI.pay,T=payTarget(P),today=dkey(new Date());
   const el=document.getElementById('p-amt');const amt=parseMoney(el?el.value:P.amount);if(!(amt>0)){toast('Escribe cuánto pagaste.');return}
-  const fromEnv=Math.min(T.env,amt),rest=amt-fromEnv;const src=P.src||'own';const linked=[];
+  const fromEnv=Math.min(T.env,amt),rest=amt-fromEnv;const src=P.src||(T.isCard?(ownBank()-fromEnv>=rest?'own':'fund'):'fund');const linked=[];
   let main;
   if(P.kind==='fixed'){const x=F.fixed.find(f=>f.id===P.id);main={type:'out',kind:'needs',amount:amt,date:today,cat:x.name,note:'Pago fijo',fixedPaid:x.id};addMove(main);(F.fixedPaid[curMonth()]=F.fixedPaid[curMonth()]||{})[x.id]=main.id}
   else{main={type:'debt',amount:Math.min(amt,T.max||amt),date:today,ref:P.id,note:'Pago'};addMove(main)}
@@ -1801,9 +1823,10 @@ function doPay(){
       if(need>0){const m={type:'use',from:'own',amount:need,date:today,note:'Para pagar '+T.name};F.moves.push(Object.assign(m,{id:uid()}));linked.push(m.id)}var extraOwn=need>0?need:0}
     else{const m={id:uid(),type:'use',from:src,amount:rest,date:today,note:'Para pagar '+T.name};F.moves.push(m);linked.push(m.id)}
   }
+  if(T.isCard&&fromEnv>0){const m={id:uid(),type:'use',from:'own',amount:fromEnv,date:today,note:'Tarjeta (apartado)'};F.moves.push(m);linked.push(m.id)}
   main.linked=linked;UI.pay=null;save('finance');render();
   const parts=[];if(fromEnv>0)parts.push(`${money(fromEnv)} de lo apartado`);
-  if(rest>0){if(src==='save'){const eo=typeof extraOwn==='number'?extraOwn:0;if(rest-eo>0)parts.push(`${money(rest-eo)} de tus ahorros`);if(eo>0)parts.push(`${money(eo)} de lo tuyo (no alcanzó el ahorro)`)}else parts.push(`${money(rest)} ${src==='own'?'de lo tuyo':'del día a día'}`)}
+  if(rest>0){if(src==='save'){const eo=typeof extraOwn==='number'?extraOwn:0;if(rest-eo>0)parts.push(`${money(rest-eo)} de tus ahorros`);if(eo>0)parts.push(`${money(eo)} de lo tuyo (no alcanzó el ahorro)`)}else parts.push(`${money(rest)} ${src==='own'?'de lo tuyo':src==='fund'?'del fondo':'del día a día'}`)}
   toast(`Pagaste ${money(amt)}: ${parts.join(', ')}.`);
 }
 function splitCard(){
@@ -1812,12 +1835,13 @@ function splitCard(){
   return `<section class="now t-free"><span class="kind">Te entraron ${money(a)}</span><h2>Así se reparte</h2>
     <div class="stack" style="gap:6px">
     ${line(P.fixed,'pagos fijos')}
-    ${line(P.card,'tarjeta')}
-    ${line(P.debt,`para la deuda <b>${esc(P.targetName)}</b>${P.prio?' (va primero: recibe lo de deudas y lo de ahorro)':''}`)}
-    ${P.save>0?`<p><b>${money(P.save)}</b> para ahorrar${al.length?': '+al.map(x=>`${money(x.a)} a ${esc(x.g.name)}`).join(', '):''}</p>`:''}
+    ${line(P.card,'apartado para la tarjeta (queda en lo tuyo)')}
+    ${line(P.fund,'al fondo')}
+    ${line(P.debt,`a préstamos: <b>${esc(P.targetName)}</b>`)}
+    ${P.save>0?`<p><b>${money(P.save)}</b> a metas${al.length?': '+al.map(x=>`${money(x.a)} a ${esc(x.g.name)}`).join(', '):''}</p>`:''}
     ${line(P.needs,'día a día')}
     ${line(P.own,'para ti')}</div>
-    ${P.pct>0?`<small class="muted">${P.pct}% a obligaciones, el resto con tus porcentajes.</small>`:''}
+    ${P.owing?'<small class="muted">Mientras haya deudas no se reparte nada más.</small>':''}
     <div class="row"><button class="primary" data-act="fin-apply">Ya lo separé</button><button data-act="fin-split-close">Ahora no</button></div></section>`;
 }
 function vPlata(){
@@ -1864,7 +1888,7 @@ function vPlata(){
     if(rd.length){const pay=Math.max(monthlyAvg('debt',null,m=>!c||m.ref!==c.id),rd.reduce((a,d)=>a+d.minPay,0));h+=`<section class="card row" style="justify-content:space-between;flex-direction:row"><span><b>Libre de deudas</b><br><small class="muted">${monthsLabel(payoffAll(pay))}</small></span><span class="mono">${money(debt)}</span></section>`}
     // Movimientos
     const all=F.moves.slice().sort((a,b)=>(b.date+b.id).localeCompare(a.date+a.id));const recent=all.slice(0,UI.movesMore?25:5);
-    const L={in:'Entró',debt:'Pago',save:'Ahorro',loan:'Préstamo',use:'Sacado'};
+    const L={in:'Entró',debt:'Pago',save:'Ahorro',loan:'Préstamo',use:'Sacado',fund:'Al fondo'};
     if(recent.length)h+=`<section class="card"><h3>Movimientos</h3><div class="plist">${recent.map(x=>`<div class="prow mv"><span class="pmain"><b>${esc(x.note||x.cat||(x.type==='out'?'Gasto':L[x.type]))}</b><small>${shortDate(x.date)} · ${x.type==='out'?(moveKind(x)==='own'?'para ti':'obligatorio')+(x.pay==='card'?' · tarjeta':''):L[x.type]}</small></span><span class="pamt ${x.type==='in'||x.type==='loan'?'pos':''}">${x.type==='in'||x.type==='loan'||x.amount<0?'+':'−'}${money(Math.abs(x.amount))}</span><button class="small ghost icon" data-act="fin-del-move" data-id="${x.id}" aria-label="Borrar">×</button></div>`).join('')}</div>
       ${all.length>5?`<button class="ghost small" data-act="moves-more">${UI.movesMore?'Ver menos':'Ver más'}</button>`:''}</section>`;
   }
@@ -1891,7 +1915,7 @@ function vPlata(){
       const catLab=v=>v.startsWith('fx:')?(F.fixed.find(x=>'fx:'+x.id===v)||{name:'U'}).name:v;
       h+=`<section class="card"><form id="f-fin" class="stack">
         <input id="fin-amt" class="amt" inputmode="numeric" autocomplete="off" placeholder="$ 0" value="${esc(UI.amtDraft||'')}" aria-label="Cuánto">
-        ${T==='out'?`<div class="row"><button type="button" class="chip ${K==='needs'?'sel':''}" data-act="out-kind" data-v="needs">Obligatorio</button><button type="button" class="chip ${K==='own'?'sel':''}" data-act="out-kind" data-v="own">Para mí</button>
+        ${T==='out'?`<div class="row"><button type="button" class="chip ${K==='needs'?'sel':''}" data-act="out-kind" data-v="needs">Obligatorio</button><button type="button" class="chip ${K==='own'?'sel':''}" data-act="out-kind" data-v="own">Para mí</button><button type="button" class="chip ${K==='fund'?'sel':''}" data-act="out-kind" data-v="fund">Imprevisto (fondo)</button>
           <button type="button" class="chip ${P==='card'?'sel':''}" data-act="pay-with" data-v="${P==='card'?'cash':'card'}">${P==='card'?'✓ ':''}Con tarjeta</button></div>
           <input type="hidden" id="fin-cat" value="${esc(pre)}"><div class="row catpick">${cats.map(v=>`<button type="button" class="chip small ${v===pre?'sel':''}" data-act="cat-pick" data-v="${esc(v)}">${esc(catLab(v))}</button>`).join('')}</div>
           ${P==='card'?`<label class="f">Cuotas<select id="fin-cuotas">${[1,2,3,6,12,24,36].map(n=>`<option value="${n}">${n===1?'1 cuota (sin intereses)':n+' cuotas'}</option>`).join('')}</select></label>`:''}`:''}
@@ -2097,10 +2121,11 @@ function updatePreview(){
   el.textContent=est?`Con tu margen de ${f.f.toFixed(1)}× ${f.n?'(aprendido de '+f.n+' tareas)':'(mientras aprendo de ti)'} te reservo ${dur(est*60*f.f)}.`:'';
 }
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='sim-amt'){UI.sim=parseMoney(e.target.value);render()}});
-function coinRain(n){
+function burst(set,n){coinRain(n||18,set)}
+function coinRain(n,set){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
   const box=document.createElement('div');box.className='coinrain';document.body.appendChild(box);
-  for(let i=0;i<(n||16);i++){const c=document.createElement('span');c.textContent=['🪙','💰','🪙','✨'][i%4];
+  for(let i=0;i<(n||16);i++){const c=document.createElement('span');const S=set||['🪙','💰','🪙','✨'];c.textContent=S[i%S.length];
     c.style.left=(5+Math.random()*90)+'%';c.style.animationDelay=(Math.random()*.5)+'s';c.style.fontSize=(18+Math.random()*16)+'px';box.appendChild(c)}
   setTimeout(()=>box.remove(),2200);
 }
@@ -2120,6 +2145,7 @@ function stopActive(){
 }
 function markDone(t,actualMin){
   t.done=true;t.actualMin=Math.round(actualMin);t.doneAt=new Date().toISOString();
+  setTimeout(()=>burst(['🎉','⭐','✨','🎊','💜']),80);
 }
 document.addEventListener('click',e=>{
   const el=e.target.closest('[data-act]');if(!el)return;
@@ -2145,7 +2171,7 @@ document.addEventListener('click',e=>{
     case 'sub':UI.sub[el.dataset.group]=el.dataset.v;lsSet('ui.sub',UI.sub);render();window.scrollTo&&window.scrollTo(0,0);break;
     case 'fin-split-close':UI.split=null;render();break;
     case 'fin-apply':{const F=fin(),today=dkey(new Date());const P=UI.split.plan||splitPlan(UI.split.amount);
-      F.env.fixed+=P.fixed;F.env.card+=P.card;
+      F.env.fixed+=P.fixed;F.env.card+=P.card;if(P.fund>0)addMove({type:'fund',amount:P.fund,date:today,note:'Al fondo'});
       const mv=F.moves.find(x=>x.id===UI.split.moveId);if(mv)mv.applied={fixed:P.fixed,card:P.card};
       if(P.debts&&P.debts.length)P.debts.forEach(x=>addMove({type:'debt',amount:x.a,date:today,ref:x.id,note:'Del reparto'}));else if(P.debt>0&&P.target)addMove({type:'debt',amount:P.debt,date:today,ref:P.target,note:'Del reparto'});
       if(P.save>0){const al=allocSave(P.save);if(al.length)al.forEach(x=>addMove({type:'save',amount:x.a,date:today,ref:x.g.id,note:'Del reparto'}));else addMove({type:'save',amount:P.save,date:today,ref:'',note:'Del reparto'})}
@@ -2169,7 +2195,7 @@ document.addEventListener('click',e=>{
       else if(v==='sleep')openSleepSheet();
       else if(v==='commit')openCommitSheet();
       else if(v==='in'||v==='out'||v==='fsave'||v==='fpay'){UI.sub.plata='registrar';UI.finType=v==='fsave'?'save':v==='fpay'?'debt':v;if(location.hash==='#plata')render();else location.hash='plata';setTimeout(()=>{const a=document.getElementById('fin-amt');if(a)a.focus()},60)}
-      else if(v==='water'){const k=dkey(new Date());const J=state.journal.days[k]=state.journal.days[k]||{};J.count=J.count||{};J.count.water=(J.count.water||0)+1;J.habits=J.habits||{};J.habits.water=true;J.pingDone=J.pingDone||{};J.pingDone.water=new Date().getHours()*60+new Date().getMinutes();save('journal');render();toast(`Van ${J.count.water} vasos hoy.`)}
+      else if(v==='water'){burst(['💧','💦','🫧'],14);const k=dkey(new Date());const J=state.journal.days[k]=state.journal.days[k]||{};J.count=J.count||{};J.count.water=(J.count.water||0)+1;J.habits=J.habits||{};J.habits.water=true;J.pingDone=J.pingDone||{};J.pingDone.water=new Date().getHours()*60+new Date().getMinutes();save('journal');render();toast(`Van ${J.count.water} vasos hoy.`)}
       break}
     case 'login':doAuth('login');break;
     case 'signup':doAuth('signup');break;
@@ -2282,7 +2308,7 @@ function handleForm(f){
     readSleepInputs();const s=UI.sheet;const J=state.journal.days[s.k]=state.journal.days[s.k]||{};
     Object.assign(J,{bedAt:s.bedAt,sleptAt:s.sleptAt,wokeAt:s.wokeAt,energy:s.energy,thief:s.thief});if(s.lunch!=null)J.lunch=s.lunch;
     const yk=addDays(s.k,-1);const Y=state.journal.days[yk]=state.journal.days[yk]||{};Y.habits=Object.assign({},Y.habits||{},s.yh);
-    UI.sheet=null;renderSheet();save('journal');render();toast(`Anotado: dormiste ${dur(gap(J.sleptAt||J.bedAt,J.wokeAt))}.`);
+    UI.sheet=null;renderSheet();save('journal');render();toast(`Anotado: dormiste ${dur(gap(J.sleptAt||J.bedAt,J.wokeAt))}.`);burst(['🌙','⭐','✨','💤'],14);
   }else if(f.dataset.form==='edit-commit'){
     const c=state.config.commitments.find(x=>x.id===f.dataset.id);if(!c)return;
     const g=id=>{const e=document.getElementById(id);return e?e.value:''};
