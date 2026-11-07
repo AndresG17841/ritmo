@@ -484,6 +484,14 @@ nav.tabs a.sel{box-shadow:0 6px 16px rgba(240,140,150,.32)}
 .coinrain{position:fixed;inset:0;pointer-events:none;z-index:90;overflow:hidden}
 .coinrain span{position:absolute;top:-40px;animation:coinfall 1.4s cubic-bezier(.4,.1,.6,1) forwards}
 @keyframes coinfall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
+
+.tk-fund .tk-fill{background:linear-gradient(180deg,#FFD9C2,#FFB99A)}
+.fundbar{position:relative;height:12px;margin:8px 0 6px}.fundbar i{background:linear-gradient(90deg,#FFB99A,#F7A1B3)}
+.fundbar em{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.5;border-radius:2px}
+details.simrow summary{cursor:pointer;list-style:none}details.simrow summary::-webkit-details-marker{display:none}
+/* después de unos segundos todo queda quieto (las celebraciones sí se ven) */
+html.still *,html.still *::before,html.still *::after{animation:none!important}
+html.still .coinrain span{animation:coinfall 1.4s cubic-bezier(.4,.1,.6,1) forwards!important}
 </style>
 
 <div class="wrap" id="app">
@@ -1356,6 +1364,7 @@ function fin(){
   const F=state.finance;
   if(F.split.spend!=null){const sp=+F.split.spend;F.split.needs=Math.round(sp*0.65/5)*5;F.split.own=sp-F.split.needs;delete F.split.spend}
   F.wish=F.wish||[];F.skipped=F.skipped||0;F.fixed=F.fixed||[];F.fixedPaid=F.fixedPaid||{};F.env=Object.assign({fixed:0,card:0},F.env||{});F.swept=F.swept||{};
+  {const gi=F.goals.findIndex(g=>/^fondo/i.test((g.name||'').trim()));if(gi>=0){const g=F.goals[gi];if(g.saved>0)F.moves.push({id:uid(),type:'fund',amount:g.saved,date:dkey(new Date()),note:'Desde la meta Fondo'});F.moves=F.moves.filter(m=>!(m.type==='save'&&m.ref===g.id));F.goals.splice(gi,1)}}
   const c=F.debts.find(d=>d.kind==='card');if(c&&c.payDay==null){c.payDay=18;c.cutDay=29;cardRecalc(c)}
   return F;
 }
@@ -1459,7 +1468,7 @@ function ownBank(){
 }
 /* Fondo de emergencia: mínimo 2 meses de ingreso, máximo 6 */
 function fundBal(){const F=fin();return F.moves.filter(x=>x.type==='fund').reduce((a,x)=>a+x.amount,0)-F.moves.filter(x=>(x.type==='use'&&x.from==='fund')||(x.type==='out'&&x.kind==='fund'&&x.pay!=='card')).reduce((a,x)=>a+x.amount,0)}
-function fundRange(){const E=expectedIncome();return {min:2*E,max:6*E}}
+function fundRange(){const m=fixedMonthly()+(card()&&card().minPay?0:0);return {min:2*m,max:6*m}}
 function obligations(){
   const F=fin(),c=card(),N=envNeeds();
   let cardM=N.card;
@@ -1581,7 +1590,7 @@ function cascadeCard(){
       ${flow[p.k]>0?`<span class="tk-drop">+${money(flow[p.k])}</span>`:''}</div></div>`};
   return `<section class="card cascade"><h3>Tus bolsillos</h3>
     <div class="tanks">${P.map(tank).join('<i class="tk-arrow"></i>')}</div>
-    <div class="simrow"><label class="f">Si me entran<input id="sim-amt" inputmode="numeric" value="${money(sim).replace(/\s/g,' ')}"></label></div></section>`;
+    <details class="simrow"><summary class="muted">Simular un ingreso</summary><label class="f">Si me entran<input id="sim-amt" inputmode="numeric" value="${money(sim).replace(/\s/g,' ')}"></label></details></div></section>`;
 }
 function shortfalls(){
   const F=fin(),c=card(),today=dkey(new Date()),out=[];
@@ -1825,6 +1834,8 @@ function vPlata(){
 
   if(sub==='ahorro'){
     const tot=F.goals.reduce((a,g)=>a+g.saved,0);
+    {const fb=fundBal(),R2=fundRange(),pc=R2.max>0?Math.min(100,fb/R2.max*100):0;
+     h+=`<section class="card"><div class="top"><h2>🛟 Fondo</h2><b class="mono">${money(fb)}</b></div><div class="bar fundbar"><i style="width:${pc}%"></i><em style="left:${R2.max>0?R2.min/R2.max*100:33}%"></em></div><small class="muted">Mínimo ${money(R2.min)} (2 meses de gastos fijos) · tope ${money(R2.max)} (6 meses)</small></section>`}
     h+=`<section class="card"><div class="top"><h2>Metas</h2><b class="mono">${money(tot)}</b></div><div class="plist">
     ${F.goals.length?goalsSorted().map(g=>{const i=goalInfo(g);const open=UI.gopen===g.id;const pr=PRIO[g.prio]?g.prio:'media';
       return `<div class="gcard ${open?'open':''}"><button class="grow" data-act="gopen" data-id="${g.id}"><span class="pmain"><b>${esc(g.name)} <span class="pri pri-${pr}">${PRIO[pr].l}</span></b>
@@ -2015,6 +2026,7 @@ function coinRain(n,set){
     c.style.left=(5+Math.random()*90)+'%';c.style.animationDelay=(Math.random()*.5)+'s';c.style.fontSize=(18+Math.random()*16)+'px';box.appendChild(c)}
   setTimeout(()=>box.remove(),2200);
 }
+setTimeout(()=>document.documentElement.classList.add('still'),12000);
 function setPhase(){const h=new Date().getHours();document.documentElement.dataset.phase=h>=5&&h<11?'manana':h>=11&&h<16?'dia':h>=16&&h<19?'tarde':'noche'}
 setPhase();setInterval(setPhase,60000);
 setInterval(tick,1000);
