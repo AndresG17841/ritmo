@@ -18,8 +18,20 @@ function alertsFor(P,di){
     if(b.type==='pause')out.push({key:`pause:${b.start}`,at:b.start,kind:'soft',big:true,title:'Pausa de 15 min',body:`Llevas 3 horas seguidas. Estírate y toma agua; sigues a las ${fmt(b.end)}.`,buttons:[['ok','Listo'],['snooze10','Termino en 10 min']]});
     if(b.type==='rest')out.push({key:`rest:${b.start}`,at:b.start,kind:'soft',big:false,title:'Descanso al llegar',body:`No tienes que hacer nada hasta las ${fmt(b.end)}.`,buttons:[['ok','Gracias']]});
   }
-  for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:false,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min']]});
+  for(const g of T.pings||[])out.push({key:`ping:${g.id}:${g.min}`,at:g.min,kind:'ping',big:false,pingId:g.id,pingMin:g.min,title:g.id==='water'?'Toma un vaso de agua':g.name,body:'Un minuto y sigues.',buttons:[['ping-ok','Listo'],['snooze20','En 20 min'],['ping-skip','Ahora no puedo']]});
   return out;
+}
+// Avisos atendidos en cualquier dispositivo (celular o PC): se guardan en la nube y los demás no lo repiten.
+function ackAlert(key,until){
+  if(!key)return;const J=state.journal;J.acks=J.acks||{};J.acks[key]=until||1;J.acks['@'+key]=Date.now();
+  const old=Date.now()-2*864e5;for(const k in J.acks)if(k[0]==='@'&&J.acks[k]<old){delete J.acks[k];delete J.acks[k.slice(1)]}
+  save('journal');
+  try{if(typeof sb!=='undefined'&&sb&&sbUser)sb.from('ritmo_alerts').delete().eq('user_id',sbUser.id).eq('key',key).is('sent_at',null).then(()=>{})}catch(e){}
+}
+function acked(key){const v=(state.journal.acks||{})[key];return !!v&&(v===1||Date.now()<v)}
+function alertSync(){
+  const a=NOTI.current;if(a&&acked(a.key)){if(DESK)DESK.act(a.key,'remote');NOTI.current=null;const el=document.getElementById('popup');if(el){el.hidden=true;el.innerHTML=''}}
+  if(RP)scheduleRitmo();
 }
 function checkAlerts(){
   pushUpload();
@@ -34,7 +46,7 @@ function checkAlerts(){
   if(sIdx>=0){a=NOTI.snoozed[sIdx].a;NOTI.snoozed.splice(sIdx,1)}
   else{
     const act=state.tasks.active;
-    a=alertsFor(P).filter(x=>!NOTI.shown[x.key]&&x.at<=now&&now<x.at+10)
+    a=alertsFor(P).filter(x=>!NOTI.shown[x.key]&&!acked(x.key)&&x.at<=now&&now<x.at+10)
       .filter(x=>!(x.kind==='task'&&act&&act.taskId===x.taskId))
       .filter(x=>!x.onlyIfActive||(act&&act.taskId===x.onlyIfActive))
       .filter(x=>x.kind!=='ping'||!(((state.journal.days[P.today]||{}).pingDone||{})[x.pingId]>=x.pingMin))
@@ -58,11 +70,13 @@ function closeAlert(){NOTI.current=null;const el=document.getElementById('popup'
 function alertAction(act){
   const a=NOTI.current;if(!a)return;
   const snooze=m=>{if(LN&&!RP)nativeOne(a,Date.now()+m*60000);else NOTI.snoozed.push({a,until:Date.now()+m*60000})};
+  if(act!=='remote'){const m=/^snooze(\d+)$/.exec(act);ackAlert(a.key,m?Date.now()+(+m[1])*60000:1)}
   switch(act){
     case 'start':stopActive();state.tasks.active={taskId:a.taskId,start:Date.now()};save('tasks');if(DESK)DESK.show();location.hash='ahora';break;
     case 'cant':if(DESK)DESK.show();location.hash='ahora';setTimeout(openCommitSheet,50);break;
     case 'pause':{const t=stopActive();save('tasks');if(t)toast('Guardé tu sesión. Buen trabajo.');break}
     case 'left':state.journal.commuteActive={leftAt:Date.now(),dir:'ida'};save('journal');break;
+    case 'ping-skip':{const k=dkey(new Date());const J=state.journal.days[k]=state.journal.days[k]||{};J.pingDone=J.pingDone||{};J.pingDone[a.pingId]=a.pingMin;save('journal');break}
     case 'ping-ok':{const k=dkey(new Date());const J=state.journal.days[k]=state.journal.days[k]||{};J.pingDone=J.pingDone||{};J.pingDone[a.pingId]=a.pingMin;J.count=J.count||{};J.count[a.pingId]=(J.count[a.pingId]||0)+1;J.habits=J.habits||{};J.habits[a.pingId]=true;save('journal');break}
     case 'shutdown':if(DESK){const secs=Math.max(60,Math.round(((a.end||0)-(new Date().getHours()*60+new Date().getMinutes()))*60));DESK.shutdownIn(secs);toast('El PC se apaga a la hora de dormir. Para cancelar: Ajustes → Cancelar apagado.')}break;
     default:{const m=/^snooze(\d+)$/.exec(act);if(m)snooze(+m[1])}
@@ -133,7 +147,7 @@ async function nativeInit(){
       {id:'task',actions:[{id:'start',title:'Empiezo'},{id:'snooze10',title:'En 10 min'}]},
       {id:'go',actions:[{id:'left',title:'Ya salgo'},{id:'snooze10',title:'En 10 min'},{id:'snooze20',title:'En 20 min'}]},
       {id:'wind',actions:[{id:'ok',title:'Entendido'},{id:'snooze10',title:'En 10 min'}]},
-      {id:'ping',actions:[{id:'ping-ok',title:'Listo'},{id:'snooze20',title:'En 20 min'}]},
+      {id:'ping',actions:[{id:'ping-ok',title:'Listo'},{id:'snooze20',title:'En 20 min'},{id:'ping-skip',title:'Ahora no'}]},
       {id:'taskend',actions:[{id:'pause',title:'Pausar y guardar'},{id:'snooze15',title:'Sigo 15 min'}]}]});
     LN.addListener('localNotificationActionPerformed',ev=>{
       const a=ev.notification&&ev.notification.extra&&ev.notification.extra.a;if(!a)return;
@@ -158,6 +172,7 @@ function ritmoPayload(){
       if(a.onlyIfActive&&!(act&&act.taskId===a.onlyIfActive))continue;
       if(a.kind==='task'&&act&&act.taskId===a.taskId&&di===0)continue;
       if(a.kind==='ping'&&done[a.pingId]>=a.pingMin)continue;
+      if(acked(a.key))continue;
       alerts.push(Object.assign(lite(a),{id:nId(a.key),at,buttons:(a.buttons||[]).filter(b=>b[0]!=='shutdown')}));
     }
     if(di<2)for(const b of D.blocks){if(b.type==='sleep'&&b.start===0&&di===0)continue;if(b.type==='open')continue;timeline.push({start:base+b.start*60000,end:base+b.end*60000,title:b.title,type:b.type,prio:prio(b)})}
@@ -207,6 +222,7 @@ async function pushUpload(force){
       if(a.onlyIfActive)continue;
       if(a.kind==='task'&&act&&act.taskId===a.taskId&&di===0)continue;
       if(a.kind==='ping'&&done[a.pingId]>=a.pingMin)continue;
+      if(acked(a.key))continue;
       rows.push({user_id:sbUser.id,key:a.key,at:new Date(at).toISOString(),payload:Object.assign(lite(a),{id:nId(a.key),at,buttons:(a.buttons||[]).filter(b=>b[0]!=='shutdown')})});
     }
   }

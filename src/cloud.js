@@ -60,7 +60,7 @@ async function startCloud(user){
     sbChannel=sb.channel('ritmo-'+user.id).on('postgres_changes',{event:'*',schema:'public',table:'ritmo_docs',filter:'user_id=eq.'+user.id},p=>{
       const r=p.new;if(!r||!r.name)return;
       if(r.updated_at===store.lastWrite[r.name]||store.dirty[r.name]||store.writing[r.name])return;
-      applyDoc(r.name,r.data);lsSet(r.name,state[r.name]);softRender();
+      applyDoc(r.name,r.data);lsSet(r.name,state[r.name]);softRender();if(r.name==='journal'&&typeof alertSync==='function')alertSync();
     }).subscribe();
   }catch(e){}
   window.addEventListener('focus',()=>pullAll());
@@ -81,6 +81,7 @@ async function pullAll(first){
   if(typeof pruneCommitments==='function'&&pruneCommitments())save('config');
   if(typeof pruneTasks==='function'&&pruneTasks())save('tasks');
   if(first)render();else softRender();
+  if(typeof alertSync==='function')alertSync();
 }
 async function importBackup(file){
   const txt=await new Promise((ok,ko)=>{const r=new FileReader();r.onload=()=>ok(r.result);r.onerror=ko;r.readAsText(file)});let j;
