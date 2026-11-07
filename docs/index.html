@@ -491,6 +491,20 @@ nav.tabs a.sel{box-shadow:0 6px 16px rgba(240,140,150,.32)}
 .tk-arrow{display:block;height:16px;width:2px;margin:0 auto;background:repeating-linear-gradient(180deg,var(--muted) 0 3px,transparent 3px 6px);opacity:.5}
 .simrow{margin-top:14px;padding-top:12px;border-top:1px dashed var(--line)}
 .simrow input{font-family:var(--display);font-weight:700;font-size:1.1rem}
+
+.hero-money{align-items:center;text-align:center}
+.hero-money .hm-row{justify-content:center;gap:22px}
+/* agua viva en los bolsillos */
+.tk-fill::before{content:"";position:absolute;left:0;top:-7px;width:200%;height:8px;background:inherit;
+  -webkit-mask:radial-gradient(8px 6px at 8px 100%,#000 98%,transparent) 0 0/16px 8px repeat-x;mask:radial-gradient(8px 6px at 8px 100%,#000 98%,transparent) 0 0/16px 8px repeat-x;
+  animation:wave 3.5s linear 4}
+@keyframes wave{to{transform:translateX(-50%)}}
+.tank{transition:transform .2s}.tank:active{transform:scale(.98)}
+.empty-art{text-align:center;align-items:center}.empty-art .art{font-size:3rem;animation:floaty 3s ease-in-out 2}
+@keyframes floaty{50%{transform:translateY(-8px)}}
+.coinrain{position:fixed;inset:0;pointer-events:none;z-index:90;overflow:hidden}
+.coinrain span{position:absolute;top:-40px;animation:coinfall 1.4s cubic-bezier(.4,.1,.6,1) forwards}
+@keyframes coinfall{to{transform:translateY(105vh) rotate(540deg);opacity:.2}}
 </style>
 
 <div class="wrap" id="app">
@@ -1341,7 +1355,7 @@ function vBien(){
   return seg('bien',sub,[['hoy','Sueño y hábitos'],['progreso','Progreso']])+(sub==='progreso'?vProgreso():vRegistro());
 }
 function vAjustesBase(){
-  const S=state.config.settings;
+  const S=state.config.settings;const FS=finSettings();
   const inp=(path,label,type='time',extra='')=>`<label class="f">${label}<input type="${type}" data-set="${path}" value="${esc(getPath(S,path))}" ${extra}></label>`;
   let h=`<section class="card"><h2>Sueño</h2><div class="grid2">${inp('wakeWeekday','Me levanto entre semana')}${inp('wakeWeekend','Fines de semana, festivos y vacaciones')}${inp('screensOff','Pantallas fuera')}${inp('bed','A la cama')}</div></section>
   <section class="card"><h2>Tiempo libre y trabajo</h2><div class="grid2">${inp('freeMin','Tiempo libre entre semana (min)','number','min="30" step="15"')}${inp('freeMinWeekend','Fines de semana (min)','number','min="30" step="15"')}${inp('freeStart','Prefiero mi tiempo libre desde')}
@@ -1355,7 +1369,8 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 23:34</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 23:41</p>`;
+  h+=FS;
   return h;
 }
 function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
@@ -1545,7 +1560,7 @@ function classFrac(mk){
 function expectedIncome(){
   const F=fin();const base=+F.expectedIncome||300000;
   const done=lastMonths(4).slice(1).map(m=>F.moves.filter(x=>x.type==='in'&&monthKey(x.date)===m).reduce((a,x)=>a+x.amount,0)).filter(v=>v>0);
-  return Math.round((base+done.reduce((a,b)=>a+b,0))/(1+done.length));
+  return done.length?Math.round(done.reduce((a,b)=>a+b,0)/done.length):base; // el supuesto solo mientras no haya meses reales
 }
 function ownBank(){
   const F=fin();const ins=F.moves.filter(x=>x.type==='in').reduce((a,x)=>{const p=incPlan(x);return a+p.own+(p.needs||0)},0);
@@ -1653,12 +1668,11 @@ function cascadeCard(){
   const tank=p=>{const full=p.need>0?Math.min(100,p.have/p.need*100):(p.k==='debt'?100:Math.min(100,p.have/Math.max(1,E)*100));
     const done=p.need>0?p.have>=p.need:p.k==='debt';
     return `<div class="tank tk-${p.k}${done?' done':''}"><div class="tk-fill" style="height:${p.k==='debt'&&p.need>0?6:Math.max(6,full)}%"></div>
-      <div class="tk-in"><span class="tk-ic">${p.ic}</span><b>${p.n}</b><span class="tk-amt">${p.k==='debt'?(p.need>0?money(p.need):'$0'):money(p.have)}</span><small>${esc(p.note)}</small>
+      <div class="tk-in"><span class="tk-ic">${p.ic}</span><b>${p.n}</b><span class="tk-amt">${p.k==='debt'?(p.need>0?money(p.need):'$0'):money(p.have)}</span><small>${p.need>0&&p.k!=='debt'&&p.have<p.need?'de '+money(p.need):''}</small>
       ${flow[p.k]>0?`<span class="tk-drop">+${money(flow[p.k])}</span>`:''}</div></div>`};
-  return `<section class="card cascade"><div class="row" style="justify-content:space-between;align-items:baseline"><h3>Tus bolsillos</h3><small class="muted">la plata cae en orden ↓</small></div>
+  return `<section class="card cascade"><h3>Tus bolsillos</h3>
     <div class="tanks">${P.map(tank).join('<i class="tk-arrow"></i>')}</div>
-    <div class="simrow"><label class="f">Si me entran<input id="sim-amt" inputmode="numeric" value="${money(sim).replace(/\s/g,' ')}"></label>
-    <p class="muted">${S.debt>0?`Todo lo que pueda va primero a tus deudas (${money(S.debt)}). `:''}${S.fixed>0?`${money(S.fixed)} a mensualidades. `:''}${S.card>0?`${money(S.card)} a la tarjeta. `:''}${S.save+S.own>0?`Lo que sobra se parte: ${money(S.save)} ahorro y ${money(S.own)} para ti.`:'No sobra nada para repartir todavía.'}</p></div></section>`;
+    <div class="simrow"><label class="f">Si me entran<input id="sim-amt" inputmode="numeric" value="${money(sim).replace(/\s/g,' ')}"></label></div></section>`;
 }
 function shortfalls(){
   const F=fin(),c=card(),today=dkey(new Date()),out=[];
@@ -1809,7 +1823,8 @@ function splitCard(){
 function vPlata(){
   const F=fin(),today=dkey(new Date()),M=monthState(),c=card();
   let sub=UI.sub.plata||'resumen';if(sub==='deudas')sub='resumen';
-  let h=seg('plata',sub,[['resumen','Resumen'],['registrar','Anotar'],['ahorro','Metas'],['presupuesto','Ajustes']]);
+  if(sub==='presupuesto')sub='resumen';
+  let h=sub==='registrar'?`<div class="row" style="justify-content:space-between"><h2 style="margin:0">Anotar</h2><button class="small" data-act="sub" data-group="plata" data-v="resumen">Listo</button></div>`:seg('plata',sub,[['resumen','Resumen'],['pagar','Por pagar'],['ahorro','Metas']]);
   // Solo lo que pide acción
   if(UI.pay)h+=payCard();
   if(UI.split)h+=splitCard();
@@ -1825,7 +1840,7 @@ function vPlata(){
     const E=expectedIncome();const own=ownBank();const saved=F.goals.reduce((a,g)=>a+g.saved,0);
     const rd=realDebts();const debt=rd.reduce((a,d)=>a+d.balance,0);
     h+=`<section class="hero-money"><span class="label">Para ti, disponible</span><b class="big" data-count="${Math.round(own)}">${money(own)}</b>
-      <div class="hm-row"><span><small>Entró este mes</small>${money(M.inc)} <em>de ~${money(E)}</em></span><span><small>Ahorrado</small>${money(saved)}</span>${debt>0?`<span><small>Deuda</small>${money(debt)}</span>`:''}</div></section>`;
+      <div class="hm-row"><span><small>Entró este mes</small>${money(M.inc)}</span><span><small>Ahorrado</small>${money(saved)}</span>${debt>0?`<span><small>Deuda</small>${money(debt)}</span>`:''}</div></section>`;
     h+=cascadeCard();
     // Por pagar
     const fx=fixedState();const rows=[];
@@ -1838,7 +1853,8 @@ function vPlata(){
       else rows.push(`<div class="prow ${x.paid?'done':''}"><span class="pdot ${x.paid?'ok':''}"></span><span class="pmain"><b>${esc(x.name)}</b>${x.day?`<small>el ${x.day}</small>`:''}</span><span class="pamt">${money(x.amount)}</span>${x.paid?`<button class="small ghost" data-act="fix-undo" data-id="${x.id}">✓ Pagado</button>`:`<button class="small primary" data-act="pay-open" data-k="fixed" data-id="${x.id}">Pagar</button>`}</div>`);
     }
     const O=obligations();const need=O.fixed+O.card;const remE=Math.max(0,E-M.inc);
-    if(rows.length)h+=`<section class="card"><h3>Por pagar</h3><div class="plist">${rows.join('')}</div>${need>remE&&remE>0?`<p class="warnline">Este mes faltarían ${money(need-remE)}.</p>`:''}</section>`;
+    UI._payRows={rows,need,remE};
+    if(false)h+=`<section class="card"><h3>Por pagar</h3><div class="plist">${rows.join('')}</div>${need>remE&&remE>0?`<p class="warnline">Este mes faltarían ${money(need-remE)}.</p>`:''}</section>`;
     // Este mes
     const bar=(lab,sp,bud)=>`<div class="mrow"><div class="row" style="justify-content:space-between"><b>${lab}</b><span class="mono">${money(Math.max(0,bud-sp))} <small class="muted">quedan</small></span></div>${finBar(sp,bud)}</div>`;
     h+=`<section class="card"><h3>Este mes</h3>${bar('Gastado de lo tuyo',M.ownSpent+M.needsSpent,M.ownBud+M.needsBud)}`;
@@ -1853,6 +1869,18 @@ function vPlata(){
       ${all.length>5?`<button class="ghost small" data-act="moves-more">${UI.movesMore?'Ver menos':'Ver más'}</button>`:''}</section>`;
   }
 
+  if(sub==='pagar'){
+    const fx=fixedState();const rows=[];
+    if(c&&c.balance>0){const ap=Math.min(F.env.card,c.minPay);const ok=ap>=c.minPay;
+      rows.push(`<div class="prow"><span class="pdot ${ok?'ok':''}"></span><span class="pmain"><b>Tarjeta</b><small>${c.nextDue?niceDate(c.nextDue):''} · ${ok?'apartado ✓':'apartado '+money(ap)}</small></span><span class="pamt">${money(c.minPay)}</span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${c.id}">Pagar</button></div>`)}
+    for(const d of F.debts.filter(d=>d.kind!=='card'&&d.balance>0))
+      rows.push(`<div class="prow"><span class="pdot ${d.priority?'risk':''}"></span><span class="pmain"><b>${esc(d.name)}</b><small>Debes ${money(d.balance)}</small></span><span class="pamt"></span><button class="small primary" data-act="pay-open" data-k="debt" data-id="${d.id}">Pagar</button></div>`);
+    for(const x of fx){
+      if(x.variable)rows.push(`<div class="prow"><span class="pdot"></span><span class="pmain"><b>${esc(x.name)}</b><small>Llevas ${money(x.spent)} de ~${money(x.est)}</small></span><span class="pamt"></span><button class="small" data-act="fix-add" data-id="${x.id}">Anotar</button></div>`);
+      else rows.push(`<div class="prow ${x.paid?'done':''}"><span class="pdot ${x.paid?'ok':''}"></span><span class="pmain"><b>${esc(x.name)}</b>${x.day?`<small>el ${x.day}</small>`:''}</span><span class="pamt">${money(x.amount)}</span>${x.paid?`<button class="small ghost" data-act="fix-undo" data-id="${x.id}">✓ Pagado</button>`:`<button class="small primary" data-act="pay-open" data-k="fixed" data-id="${x.id}">Pagar</button>`}</div>`);
+    }
+    h+=rows.length?`<section class="card"><div class="plist">${rows.join('')}</div></section>`:`<section class="card empty-art"><div class="art">🌤</div><b>Nada por pagar</b></section>`;
+  }
   if(sub==='registrar'){
     const T=UI.finType==='buy'?'buy':(UI.finType||'out');const K=UI.outKind||'needs';const P=UI.payWith||'cash';
     const tabs=[['out','Gasté',ICON.coinOut],['in','Entró',ICON.coinIn],['save','Ahorré',ICON.task],['debt','Pagué',ICON.job],['buy','¿Lo compro?',ICON.bag]];
@@ -1899,24 +1927,25 @@ function vPlata(){
     <p class="muted center">Alta recibe más, baja poco, "cuando sobre" solo lo que sobra.</p>`;
   }
 
-  if(sub==='presupuesto'){
+  return h;
+}
+
+function finSettings(){
+  const F=fin(),c=card();let h='';
     const fx=fixedState();const S4=F.split.debt+F.split.save+F.split.needs+F.split.own;
-    h+=`<section class="card"><h3>Ingreso esperado al mes</h3><input data-fin="expectedIncome" inputmode="numeric" value="${F.expectedIncome||300000}" aria-label="Ingreso esperado"><small class="muted">Ajustado con lo real: ${money(expectedIncome())}</small></section>
+    h+=`<h2 style="margin:18px 4px 0">Finanzas</h2><section class="card"><h3>Ingreso esperado al mes</h3><input data-fin="expectedIncome" inputmode="numeric" value="${F.expectedIncome||300000}" aria-label="Ingreso esperado"><small class="muted">Ajustado con lo real: ${money(expectedIncome())}</small></section>
     <section class="card"><h3>Pagos fijos</h3><div class="plist">${fx.map(x=>`<div class="prow"><span class="pmain"><b>${esc(x.name)}</b><small>${x.variable?'Varía':x.day?'el '+x.day:''}</small></span><input class="mini" data-fixamt="${x.id}" inputmode="numeric" value="${x.amount||0}" aria-label="Valor de ${esc(x.name)}"><button class="small ghost icon danger" data-act="fix-del" data-id="${x.id}" aria-label="Quitar">${UI.confirmDel===x.id?'?':'×'}</button></div>`).join('')}</div>
       <details class="more"><summary>+ Agregar pago fijo</summary><form id="f-fixed" class="stack"><div class="grid2"><label class="f">Qué<input id="x-name" autocomplete="off"></label><label class="f">Cuánto<input id="x-amt" inputmode="numeric"></label><label class="f">Día<input id="x-day" inputmode="numeric"></label></div>
       <label class="check"><input type="checkbox" id="x-var"> Varía cada mes</label><p class="danger" id="x-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar</button></form></details></section>
-    <section class="card"><h3>Reparto de lo que sobra</h3><div class="split4">${[['debt','Deudas'],['save','Ahorro'],['needs','Día a día'],['own','Para ti']].map(([k,l])=>`<label class="f">${l}<input data-fin="split.${k}" inputmode="numeric" value="${F.split[k]}"></label>`).join('')}</div>
-      ${S4!==100?`<p class="danger">Suman ${S4}%: deben dar 100%.</p>`:''}
+    <section class="card"><h3>Orden de las deudas</h3>
       <div class="row"><span class="label">Pagar primero</span><button class="chip small ${F.strategy==='avalancha'?'sel':''}" data-act="fin-strat" data-v="avalancha">Más interés</button><button class="chip small ${F.strategy==='bola'?'sel':''}" data-act="fin-strat" data-v="bola">Más pequeña</button></div></section>
     <section class="card"><h3>Deudas</h3><div class="plist">${F.debts.map(d=>`<div class="prow"><span class="pmain"><b>${esc(d.name)}</b><small>${money(d.balance)}${d.kind==='card'?` · corte ${d.cutDay||29}, pago ${d.payDay||18}`:d.rate?` · ${d.rate}% mes`:''}</small></span>${d.kind==='card'?'':`<button class="small ghost icon danger" data-act="fin-del-debt" data-id="${d.id}" aria-label="Quitar">${UI.confirmDel===d.id?'?':'×'}</button>`}</div>`).join('')||'<p class="muted">Sin deudas.</p>'}</div>
       ${c?`<details class="more"><summary>Ajustes de la tarjeta</summary><div class="grid2"><label class="f">Día de corte<input inputmode="numeric" data-debtset="${c.id}.cutDay" value="${c.cutDay||29}"></label><label class="f">Día de pago<input inputmode="numeric" data-debtset="${c.id}.payDay" value="${c.payDay||18}"></label><label class="f">Interés % a cuotas<input inputmode="decimal" data-debtset="${c.id}.rate" value="${c.rate||0}"></label></div></details>`:''}
       <details class="more"><summary>+ Agregar deuda</summary><form id="f-debt" class="stack"><div class="grid2"><label class="f">A quién<input id="d-name" autocomplete="off"></label><label class="f">Cuánto debes<input id="d-bal" inputmode="numeric"></label></div>
       <div class="grid2"><label class="f">Interés % mes<input id="d-rate" inputmode="decimal" value="0"></label><label class="f">Cuota<input id="d-min" inputmode="numeric"></label><label class="f">Día de pago<input id="d-day" inputmode="numeric"></label></div>
       <p class="danger" id="d-err" hidden></p><button class="small primary" type="button" data-act="submit">Agregar</button></form></details></section>`;
-  }
   return h;
 }
-
 function finRef(type,ref){const F=fin();return type==='debt'?F.debts.find(d=>d.id===ref):type==='save'?F.goals.find(g=>g.id===ref):null}
 function addMove(m){
   const F=fin();m.id=m.id||uid();
@@ -2068,6 +2097,13 @@ function updatePreview(){
   el.textContent=est?`Con tu margen de ${f.f.toFixed(1)}× ${f.n?'(aprendido de '+f.n+' tareas)':'(mientras aprendo de ti)'} te reservo ${dur(est*60*f.f)}.`:'';
 }
 document.addEventListener('change',e=>{if(e.target&&e.target.id==='sim-amt'){UI.sim=parseMoney(e.target.value);render()}});
+function coinRain(n){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const box=document.createElement('div');box.className='coinrain';document.body.appendChild(box);
+  for(let i=0;i<(n||16);i++){const c=document.createElement('span');c.textContent=['🪙','💰','🪙','✨'][i%4];
+    c.style.left=(5+Math.random()*90)+'%';c.style.animationDelay=(Math.random()*.5)+'s';c.style.fontSize=(18+Math.random()*16)+'px';box.appendChild(c)}
+  setTimeout(()=>box.remove(),2200);
+}
 function setPhase(){const h=new Date().getHours();document.documentElement.dataset.phase=h>=5&&h<11?'manana':h>=11&&h<16?'dia':h>=16&&h<19?'tarde':'noche'}
 setPhase();setInterval(setPhase,60000);
 setInterval(tick,1000);
@@ -2113,26 +2149,26 @@ document.addEventListener('click',e=>{
       const mv=F.moves.find(x=>x.id===UI.split.moveId);if(mv)mv.applied={fixed:P.fixed,card:P.card};
       if(P.debts&&P.debts.length)P.debts.forEach(x=>addMove({type:'debt',amount:x.a,date:today,ref:x.id,note:'Del reparto'}));else if(P.debt>0&&P.target)addMove({type:'debt',amount:P.debt,date:today,ref:P.target,note:'Del reparto'});
       if(P.save>0){const al=allocSave(P.save);if(al.length)al.forEach(x=>addMove({type:'save',amount:x.a,date:today,ref:x.g.id,note:'Del reparto'}));else addMove({type:'save',amount:P.save,date:today,ref:'',note:'Del reparto'})}
-      UI.split=null;save('finance');render();toast('Listo. Así tu plata trabaja para ti.');break}
+      UI.split=null;save('finance');render();coinRain();break}
     case 'fin-strat':fin().strategy=el.dataset.v;save('finance');render();break;
     case 'fin-del-move':delMove(id);save('finance');render();toast('Movimiento borrado.');break;
     case 'fin-del-debt':case 'fin-del-goal':{if(UI.confirmDel===id){const F=fin();if(act==='fin-del-debt')F.debts=F.debts.filter(d=>d.id!==id);else F.goals=F.goals.filter(g=>g.id!==id);UI.confirmDel=null;save('finance');render()}else{UI.confirmDel=id;render()}break}
     case 'fab':{const m=document.getElementById('fabmenu');const open=m.hidden;m.hidden=!open;document.getElementById('fab').classList.toggle('open',open);
-      if(open)m.innerHTML=`<div class="fabmenu" data-act="fab-close"><div class="list">
-        <button data-act="fab-do" data-v="task"><i>${ICON.task}</i>Nueva tarea</button>
-        <button data-act="fab-do" data-v="commit"><i>${ICON.bolt}</i>Me salió algo</button>
-        <button data-act="fab-do" data-v="out"><i>${ICON.coinOut}</i>Gasté</button>
-        <button data-act="fab-do" data-v="in"><i>${ICON.coinIn}</i>Me entró plata</button>
-        <button data-act="fab-do" data-v="buy"><i>${ICON.bag}</i>¿Me lo compro?</button>
-        <button data-act="fab-do" data-v="sleep"><i>${ICON.bed}</i>Mi noche</button>
-        <button data-act="fab-do" data-v="water"><i>${ICON.meal}</i>Tomé agua</button></div></div>`;break}
+      if(open){const tab=(location.hash||'#ahora').slice(1);const it=(v,ic,l)=>`<button data-act="fab-do" data-v="${v}"><i>${ic}</i>${l}</button>`;
+        const M={plata:[it('in',ICON.coinIn,'Me entró plata'),it('out',ICON.coinOut,'Gasté'),it('buy',ICON.bag,'¿Me lo compro?'),it('fsave',ICON.task,'Ahorré'),it('fpay',ICON.job,'Pagué algo')],
+          tareas:[it('task',ICON.task,'Nueva tarea'),it('commit',ICON.bolt,'Me salió algo')],
+          bien:[it('sleep',ICON.bed,'Mi noche'),it('water',ICON.meal,'Tomé agua')],
+          dia:[it('commit',ICON.bolt,'Agregar compromiso'),it('task',ICON.task,'Nueva tarea')]};
+        const list=M[tab]||[it('task',ICON.task,'Nueva tarea'),it('commit',ICON.bolt,'Me salió algo'),it('water',ICON.meal,'Tomé agua'),it('sleep',ICON.bed,'Mi noche')];
+        m.innerHTML=`<div class="fabmenu" data-act="fab-close"><div class="list">${list.join('')}</div></div>`}
+      break}
     case 'fab-close':if(e.target===el){document.getElementById('fabmenu').hidden=true;document.getElementById('fab').classList.remove('open')}break;
     case 'fab-do':{document.getElementById('fabmenu').hidden=true;document.getElementById('fab').classList.remove('open');const v=el.dataset.v;
       if(v==='task')openTaskSheet();
       else if(v==='buy'){UI.sub.plata='registrar';UI.finType='buy';if(location.hash==='#plata')render();else location.hash='plata';setTimeout(()=>{const a=document.getElementById('b-name');if(a)a.focus()},60)}
       else if(v==='sleep')openSleepSheet();
       else if(v==='commit')openCommitSheet();
-      else if(v==='in'||v==='out'){UI.sub.plata='registrar';UI.finType=v;if(location.hash==='#plata')render();else location.hash='plata';setTimeout(()=>{const a=document.getElementById('fin-amt');if(a)a.focus()},60)}
+      else if(v==='in'||v==='out'||v==='fsave'||v==='fpay'){UI.sub.plata='registrar';UI.finType=v==='fsave'?'save':v==='fpay'?'debt':v;if(location.hash==='#plata')render();else location.hash='plata';setTimeout(()=>{const a=document.getElementById('fin-amt');if(a)a.focus()},60)}
       else if(v==='water'){const k=dkey(new Date());const J=state.journal.days[k]=state.journal.days[k]||{};J.count=J.count||{};J.count.water=(J.count.water||0)+1;J.habits=J.habits||{};J.habits.water=true;J.pingDone=J.pingDone||{};J.pingDone.water=new Date().getHours()*60+new Date().getMinutes();save('journal');render();toast(`Van ${J.count.water} vasos hoy.`)}
       break}
     case 'login':doAuth('login');break;
