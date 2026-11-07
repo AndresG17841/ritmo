@@ -1,1 +1,1 @@
-{"name": "Ritmo", "short_name": "Ritmo", "start_url": "./index.html", "display": "standalone", "background_color": "#0E1412", "theme_color": "#1E6B5B", "lang": "es", "icons": [{"src": "icon.png", "sizes": "512x512", "type": "image/png"}]}
+{"name": "Ritmo", "short_name": "Ritmo", "start_url": "./index.html", "display": "standalone", "background_color": "#FFF7EF", "theme_color": "#FFD7BF", "lang": "es", "icons": [{"src": "icon.png", "sizes": "512x512", "type": "image/png"}]}

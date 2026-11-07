@@ -2,7 +2,8 @@
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Ritmo</title>
-<meta name="theme-color" content="#1E6B5B">
+<meta name="theme-color" content="#FFD7BF">
+<meta name="color-scheme" content="light only">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -26,18 +27,6 @@
   --mono:"IBM Plex Mono", ui-monospace, Consolas, monospace;
   --r:14px;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#0E1412; --surface:#17201D; --sunk:#111917; --ink:#E4ECE9; --muted:#97A7A1; --line:#2A3632;
-  --accent:#62C3AB; --accent-soft:#1B3A33; --accent-ink:#06150F;
-  --warm:#E5A35F; --warm-soft:#3A2A19; --risk:#EB8279; --risk-soft:#3D1F1C; --ok:#72C793; --ok-soft:#18321F;
-  --night:#A5A9F2; --night-soft:#23254A; --class:#9DBDE8; --class-soft:#1C2A3E; --neutral-soft:#1F2926;
-  color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0E1412; --surface:#17201D; --sunk:#111917; --ink:#E4ECE9; --muted:#97A7A1; --line:#2A3632;
-  --accent:#62C3AB; --accent-soft:#1B3A33; --accent-ink:#06150F;
-  --warm:#E5A35F; --warm-soft:#3A2A19; --risk:#EB8279; --risk-soft:#3D1F1C; --ok:#72C793; --ok-soft:#18321F;
-  --night:#A5A9F2; --night-soft:#23254A; --class:#9DBDE8; --class-soft:#1C2A3E; --neutral-soft:#1F2926;
-  color-scheme:dark}
 *{box-sizing:border-box}
 body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));
@@ -189,24 +178,6 @@ nav.tabs a.sel{color:var(--accent);background:var(--accent-soft)}
   --c-task:#6C5CE7; --c-class:#2F8BDB; --c-free:#1FAF83; --c-rest:#1FAF83; --c-open:#9C98C9; --c-commit:#EF8436; --c-job:#E2A92E;
   --c-sleep:#3D3A8F; --c-wind:#5B4FB8; --c-commute:#8C87C4; --c-meal:#E8668A; --c-routine:#F0B43C;
 }
-@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
-  --bg:#131129; --surface:#1E1B3C; --sunk:#181533; --ink:#ECEBFF; --muted:#A4A1CB; --line:#2E2A55;
-  --accent:#8F86FF; --accent-soft:#2B2662; --accent-ink:#0F0D24;
-  --warm:#F2A65A; --warm-soft:#3A2B1E; --risk:#FF7F91; --risk-soft:#3F1E2B; --ok:#5ED3A6; --ok-soft:#173A31;
-  --night:#ACA8FF; --night-soft:#27245B; --class:#7FB9F3; --class-soft:#1B2D4A; --neutral-soft:#242046;
-  --shadow:0 12px 32px rgba(0,0,0,.38),0 1px 0 rgba(255,255,255,.03) inset;
-  --shadow-sm:0 4px 14px rgba(0,0,0,.3);
-  --grad:linear-gradient(135deg,#4A3ECF 0%,#7447D9 55%,#A24CCB 100%);
-  color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#131129; --surface:#1E1B3C; --sunk:#181533; --ink:#ECEBFF; --muted:#A4A1CB; --line:#2E2A55;
-  --accent:#8F86FF; --accent-soft:#2B2662; --accent-ink:#0F0D24;
-  --warm:#F2A65A; --warm-soft:#3A2B1E; --risk:#FF7F91; --risk-soft:#3F1E2B; --ok:#5ED3A6; --ok-soft:#173A31;
-  --night:#ACA8FF; --night-soft:#27245B; --class:#7FB9F3; --class-soft:#1B2D4A; --neutral-soft:#242046;
-  --shadow:0 12px 32px rgba(0,0,0,.38),0 1px 0 rgba(255,255,255,.03) inset;
-  --shadow-sm:0 4px 14px rgba(0,0,0,.3);
-  --grad:linear-gradient(135deg,#4A3ECF 0%,#7447D9 55%,#A24CCB 100%);
-  color-scheme:dark}
 body{padding-block:14px calc(110px + env(safe-area-inset-bottom,0px))}
 h1,h2,h3{font-family:var(--display);letter-spacing:-.01em}
 h2{font-weight:600}
@@ -426,6 +397,84 @@ details.more[open] summary{margin-bottom:8px}
 @media (min-width:700px){.sheet{border-radius:28px}}
 .pop{border-radius:24px;border-top:0;box-shadow:0 20px 50px rgba(36,34,74,.3)}
 .hgrid i{border-radius:6px}.hgrid i.y{background:var(--grad)}
+
+/* ===== Rediseño 3: pastel y luminoso, cielo que cambia con la hora (solo modo claro) ===== */
+:root{color-scheme:light;
+  --bg:#FFF7EF; --surface:#FFFFFF; --sunk:#FCEFE6; --ink:#2F2A3E; --muted:#857B91; --line:#F1E3D8;
+  --accent:#E46F8C; --accent-soft:#FDE2E8; --accent-ink:#FFFFFF;
+  --warm:#D9822B; --warm-soft:#FFECD6; --risk:#E0556C; --risk-soft:#FFE1E5; --ok:#3FA97C; --ok-soft:#DDF5E8;
+  --night:#7C74D8; --night-soft:#ECE9FF; --class:#4A93D6; --class-soft:#E2F0FD; --neutral-soft:#F7EEE7;
+  --shadow:0 14px 34px rgba(228,111,140,.10),0 2px 6px rgba(47,42,62,.05);
+  --shadow-sm:0 6px 16px rgba(228,111,140,.10);
+  --grad:linear-gradient(135deg,#F7A1B3 0%,#F9B996 55%,#FBD48C 100%);
+  --grad-ink:#3A2533;
+  --c-task:#C3B2F7; --c-class:#A5D2F7; --c-free:#ABE5C8; --c-rest:#ABE5C8; --c-open:#EFE6DE; --c-commit:#FFC6A1; --c-job:#FBE09A;
+  --c-sleep:#BDB8F0; --c-wind:#D5C2F2; --c-commute:#D2CCE8; --c-meal:#F9B2C1; --c-routine:#FFDD94; --c-pause:#BFE9E2;
+}
+html,body{background:var(--bg)}
+body{background:radial-gradient(900px 500px at 110% -10%,#FFE3EC 0%,transparent 60%),radial-gradient(800px 600px at -20% 40%,#E7F6EE 0%,transparent 55%),var(--bg);background-attachment:fixed}
+
+/* Cabecera: un cielo pastel que cambia con la hora */
+.wrap>.top{--sky:linear-gradient(160deg,#FFD7BF 0%,#FFBFD0 55%,#F9D9F0 100%);--orb:#FFE89A;--orb-glow:rgba(255,226,140,.65);
+  background:var(--sky);color:var(--ink);box-shadow:0 18px 40px rgba(240,150,170,.25);padding-bottom:40px}
+html[data-phase="dia"] .wrap>.top{--sky:linear-gradient(160deg,#BFE4FF 0%,#CFF0F2 55%,#FFF0C2 100%);--orb:#FFE07A;--orb-glow:rgba(255,220,110,.6)}
+html[data-phase="tarde"] .wrap>.top{--sky:linear-gradient(160deg,#FFC2A6 0%,#F8A9C3 50%,#CDB4F3 100%);--orb:#FFC48A;--orb-glow:rgba(255,190,140,.6)}
+html[data-phase="noche"] .wrap>.top{--sky:linear-gradient(160deg,#C9C2F7 0%,#AFC0F2 55%,#D7C8F4 100%);--orb:#FFFBEA;--orb-glow:rgba(255,255,240,.55)}
+.wrap>.top::after{right:-26px;top:-30px;width:104px;height:104px;background:var(--orb);box-shadow:0 0 0 14px var(--orb-glow),0 0 50px 20px var(--orb-glow)}
+html[data-phase="noche"] .wrap>.top::after{box-shadow:inset -14px -6px 0 0 #E9E3FF,0 0 40px 10px var(--orb-glow)}
+.wrap>.top::before{left:0;right:0;bottom:-1px;top:auto;width:auto;height:34px;border-radius:0;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 34' preserveAspectRatio='none'%3E%3Cpath d='M0 18 C60 2 110 30 170 16 S290 0 340 14 S390 26 400 18 V34 H0Z' fill='%23FFFFFF' fill-opacity='.55'/%3E%3Cpath d='M0 26 C70 14 120 34 200 24 S330 12 400 26 V34 H0Z' fill='%23FFF7EF'/%3E%3C/svg%3E") bottom/100% 100% no-repeat}
+html[data-phase="noche"] .wrap>.top{background-image:radial-gradient(2px 2px at 18% 28%,#fff 50%,transparent 51%),radial-gradient(1.6px 1.6px at 42% 18%,#fff 50%,transparent 51%),radial-gradient(2px 2px at 63% 40%,#fff 50%,transparent 51%),radial-gradient(1.4px 1.4px at 30% 55%,#fff 50%,transparent 51%),var(--sky)}
+.wrap>.top h1,.wrap>.top .label,.wrap>.top .clock,.wrap>.top .sync{color:var(--ink)}
+.wrap>.top .label,.wrap>.top .sync{opacity:.75}
+.wrap>.top .gear{color:var(--ink);background:rgba(255,255,255,.55)}
+.wrap>.top .gear.sel,.wrap>.top .gear:hover{background:#fff;color:var(--ink)}
+.wrap>.top>*{position:relative;z-index:1}
+.wrap>.top .dot.on{background:#3FA97C}.wrap>.top .dot.warn{background:#E8962E}
+
+/* Botones */
+.primary,.chip.sel,.days button.sel,nav.tabs a.sel,.fab,.quick button.on .qi{background:var(--grad);color:var(--grad-ink)}
+.primary{box-shadow:0 8px 18px rgba(240,140,150,.30)}
+.days button.sel{color:rgba(58,37,51,.75);box-shadow:0 10px 22px rgba(240,140,150,.35)}
+.days button.sel b{color:var(--grad-ink)}
+nav.tabs{box-shadow:0 14px 36px rgba(228,111,140,.16)}
+nav.tabs a.sel{box-shadow:0 6px 16px rgba(240,140,150,.32)}
+.fab{box-shadow:0 12px 28px rgba(240,140,150,.5)}
+.fab svg{stroke:var(--grad-ink)}
+.fabmenu{background:rgba(47,42,62,.25)}
+.quick .qi{color:var(--accent)}
+.bar i{background:var(--grad)}
+
+/* Ahora: tarjetas pastel con texto oscuro */
+.now{color:var(--ink);box-shadow:0 18px 40px rgba(228,111,140,.18);background:linear-gradient(135deg,#E8E0F8,#F7E3EF)}
+.now::after{background:rgba(255,255,255,.35)}
+.now .kind,.now.t-task .kind,.now.t-free .kind,.now.t-rest .kind,.now.t-open .kind,.now.t-class .kind,.now.t-sleep .kind,.now.t-wind .kind,.now.t-commit .kind,.now.t-job .kind,.now .muted,.now .time,.now label.f{color:rgba(47,42,62,.7)}
+.now.t-task{background:linear-gradient(135deg,#D6C8FB,#F6C9DD 70%,#FFD9C7)}
+.now.t-class{background:linear-gradient(135deg,#BFE0FB,#C9F0E6)}
+.now.t-free,.now.t-rest,.now.t-open{background:linear-gradient(135deg,#C2EFD6,#F6F1B9)}
+.now.t-commit,.now.t-job{background:linear-gradient(135deg,#FFD0B0,#FFE9A6)}
+.now.t-sleep,.now.t-wind{background:linear-gradient(135deg,#CFCBF7,#BCD2F6)}
+.now.t-commute,.now.t-meal,.now.t-routine{background:linear-gradient(135deg,#FCC6D2,#FFE1A8)}
+.now.t-commute{background:linear-gradient(135deg,#D9D2F2,#C8E6F5)}
+.now button{background:rgba(255,255,255,.55);color:var(--ink)}
+.now button:hover{background:rgba(255,255,255,.8)}
+.now .primary{background:var(--ink);color:#fff;box-shadow:0 8px 18px rgba(47,42,62,.22)}
+.now .idea{background:rgba(255,255,255,.55);color:var(--ink)}
+.now .danger{color:var(--risk)}
+
+/* Línea del día: gota pastel con ícono oscuro */
+.blk .b .ic{color:rgba(47,42,62,.78)}
+.t-pause{--c:var(--c-pause)}
+.blk .b.t-open .ic{color:var(--muted)}
+.card .task::before{background:var(--c-task)}
+.card .task:has(.p-riesgo)::before{background:#F7A3B2}
+.card .task:has(.p-ajustado)::before{background:#FFCF9C}
+.card .task:has(.p-bien)::before{background:#ABE5C8}
+.tcard::before{width:8px}
+.card{box-shadow:var(--shadow)}
+.stat{background:linear-gradient(160deg,#FFF1E8,#FCEAF1)}
+.stats .stat:nth-child(2){background:linear-gradient(160deg,#EAF7EF,#EEF6FD)}
+.stats .stat:nth-child(3){background:linear-gradient(160deg,#F0EBFD,#FDEBF2)}
 </style>
 
 <div class="wrap" id="app">
@@ -1290,7 +1339,7 @@ function vAjustesBase(){
     <div class="scroll"><div class="sched"><span class="label">Día</span><span class="label">Inicio</span><span class="label">Fin</span><span class="label">Materia</span><span class="label">Salón</span><span></span>
     ${state.config.schedule.map((c,i)=>`<select data-sched="${i}.day" aria-label="Día">${[1,2,3,4,5,6,0].map(d=>`<option value="${d}" ${+c.day===d?'selected':''}>${cap1(DN[d])}</option>`).join('')}</select><input type="time" data-sched="${i}.start" value="${esc(c.start)}" aria-label="Inicio"><input type="time" data-sched="${i}.end" value="${esc(c.end)}" aria-label="Fin"><input data-sched="${i}.name" value="${esc(c.name)}" aria-label="Materia"><input data-sched="${i}.room" value="${esc(c.room||'')}" aria-label="Salón"><button class="small ghost danger" data-act="del-class" data-i="${i}" aria-label="Quitar clase">×</button>`).join('')}
     </div></div><button class="small" data-act="add-class">Agregar clase</button></section>
-  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 20:52</p>`;
+  <section class="card"><h2>Hábitos que sigo</h2>${state.config.habits.map((x,i)=>`<div class="row"><input data-habitname="${i}" value="${esc(x.name)}" aria-label="Hábito" style="flex:1 1 180px;width:auto"><select data-habitremind="${i}" aria-label="Recordatorio" style="flex:0 1 170px;width:auto">${[[0,'Sin recordatorio'],[120,'Cada 2 h'],[150,'Cada 2 h 30'],[180,'Cada 3 h'],[240,'Cada 4 h']].map(([v,l])=>`<option value="${v}" ${(+x.remindEvery||0)===v?'selected':''}>${l}</option>`).join('')}</select><button class="small ghost danger" data-act="del-habit" data-i="${i}">Quitar</button></div>`).join('')}<button class="small" data-act="add-habit">Agregar hábito</button></section><p class="muted" style="text-align:center;font-size:.8rem">Ritmo · versión del 06/11 21:01</p>`;
   return h;
 }
 function getPath(o,p){return p.split('.').reduce((a,k)=>a==null?a:a[k],o)}
@@ -1973,6 +2022,8 @@ function updatePreview(){
   const f=factorFor(cat,state.tasks.items,state.config.settings,state.tasks.learn);
   el.textContent=est?`Con tu margen de ${f.f.toFixed(1)}× ${f.n?'(aprendido de '+f.n+' tareas)':'(mientras aprendo de ti)'} te reservo ${dur(est*60*f.f)}.`:'';
 }
+function setPhase(){const h=new Date().getHours();document.documentElement.dataset.phase=h>=5&&h<11?'manana':h>=11&&h<16?'dia':h>=16&&h<19?'tarde':'noche'}
+setPhase();setInterval(setPhase,60000);
 setInterval(tick,1000);
 let lastMin=-1;
 setInterval(()=>{const n=new Date();const m=n.getMinutes();if(m!==lastMin){lastMin=m;if(UI.tab==='ahora'||UI.tab==='dia')softRender();else document.getElementById('clock').textContent=fmt(n.getHours()*60+m)}},15000);

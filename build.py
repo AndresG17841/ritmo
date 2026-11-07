@@ -53,7 +53,8 @@ head='''<!doctype html>
 <html lang="es"><head><meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>Ritmo</title>
-<meta name="theme-color" content="#1E6B5B">
+<meta name="theme-color" content="#FFD7BF">
+<meta name="color-scheme" content="light only">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -66,7 +67,7 @@ s=head+s+'\n</body></html>\n'
 out=os.path.join(HERE,'docs'); os.makedirs(os.path.join(out,'vendor'),exist_ok=True)
 open(os.path.join(out,'index.html'),'w').write(s)
 shutil.copy(os.path.join(HERE,'vendor/supabase.js'),os.path.join(out,'vendor/supabase.js'))
-json.dump({"name":"Ritmo","short_name":"Ritmo","start_url":"./index.html","display":"standalone","background_color":"#0E1412","theme_color":"#1E6B5B","lang":"es","icons":[{"src":"icon.png","sizes":"512x512","type":"image/png"}]},open(os.path.join(out,'manifest.json'),'w'))
+json.dump({"name":"Ritmo","short_name":"Ritmo","start_url":"./index.html","display":"standalone","background_color":"#FFF7EF","theme_color":"#FFD7BF","lang":"es","icons":[{"src":"icon.png","sizes":"512x512","type":"image/png"}]},open(os.path.join(out,'manifest.json'),'w'))
 shutil.copy(os.path.join(HERE,'desktop/icon.png'),os.path.join(out,'icon.png'))
 open(os.path.join(out,'.nojekyll'),'w').write('')
 shutil.copy(os.path.join(HERE,'src/sw.js'),os.path.join(out,'sw.js'))

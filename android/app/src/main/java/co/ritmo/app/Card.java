@@ -25,11 +25,11 @@ final class Card {
     }
 
     static int[] colors(String kind) {
-        if ("wind".equals(kind) || "bed".equals(kind)) return new int[]{0xFF25235E, 0xFF4C43A8};
-        if ("go".equals(kind)) return new int[]{0xFFEC7A32, 0xFFF5B44E};
-        if ("ping".equals(kind)) return new int[]{0xFF2F7FD8, 0xFF4FB3E6};
-        if ("soft".equals(kind)) return new int[]{0xFF169F78, 0xFF4CCB9C};
-        return new int[]{0xFF5B4FE0, 0xFF8F56EE, 0xFFC065E2};
+        if ("wind".equals(kind) || "bed".equals(kind)) return new int[]{0xFFCFCBF7, 0xFFBCD2F6};
+        if ("go".equals(kind)) return new int[]{0xFFFFD0B0, 0xFFFFE9A6};
+        if ("ping".equals(kind)) return new int[]{0xFFBFE0FB, 0xFFC9F0E6};
+        if ("soft".equals(kind)) return new int[]{0xFFC2EFD6, 0xFFF6F1B9};
+        return new int[]{0xFFD6C8FB, 0xFFF6C9DD, 0xFFFFD9C7};
     }
 
     static View build(Context c, JSONObject a, OnAct cb) {
@@ -44,7 +44,7 @@ final class Card {
 
         TextView kind = new TextView(c);
         kind.setText("RITMO · " + new SimpleDateFormat("HH:mm", Locale.getDefault()).format(new Date()));
-        kind.setTextColor(0xCCFFFFFF);
+        kind.setTextColor(0xB32F2A3E);
         kind.setTextSize(12);
         kind.setLetterSpacing(0.08f);
         kind.setTypeface(Typeface.DEFAULT_BOLD);
@@ -52,7 +52,7 @@ final class Card {
 
         TextView title = new TextView(c);
         title.setText(a.optString("title"));
-        title.setTextColor(Color.WHITE);
+        title.setTextColor(0xFF2F2A3E);
         title.setTextSize(23);
         title.setTypeface(Typeface.create("sans-serif-medium", Typeface.BOLD));
         title.setPadding(0, dp(c, 6), 0, dp(c, 4));
@@ -60,7 +60,7 @@ final class Card {
 
         TextView body = new TextView(c);
         body.setText(a.optString("body"));
-        body.setTextColor(0xE6FFFFFF);
+        body.setTextColor(0xD92F2A3E);
         body.setTextSize(15);
         box.addView(body);
 
@@ -85,8 +85,8 @@ final class Card {
             bt.setPadding(dp(c, 14), dp(c, 10), dp(c, 14), dp(c, 10));
             GradientDrawable g = new GradientDrawable();
             g.setCornerRadius(dp(c, 14));
-            if (i == 0) { g.setColor(Color.WHITE); bt.setTextColor(0xFF3D33B8); }
-            else { g.setColor(0x33FFFFFF); bt.setTextColor(Color.WHITE); }
+            if (i == 0) { g.setColor(0xFF2F2A3E); bt.setTextColor(Color.WHITE); }
+            else { g.setColor(0x8CFFFFFF); bt.setTextColor(0xFF2F2A3E); }
             bt.setBackground(g);
             bt.setStateListAnimator(null);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
