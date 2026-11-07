@@ -17,6 +17,10 @@ final class Actions {
         JSONObject a = new JSONObject();
         try { if (alertJson != null) a = new JSONObject(alertJson); } catch (Exception ignored) { }
         if (nm != null) nm.cancel(AlertDisplay.ALERT_NOTIF_BASE + Math.abs(a.optInt("id") % 100000));
+        String k0 = key == null ? a.optString("key") : key;
+        long until = 1;
+        if (act.startsWith("snooze")) { try { until = System.currentTimeMillis() + Integer.parseInt(act.substring(6)) * 60000L; } catch (Exception ignored) { } }
+        Cloud.ack(c, k0, until);
         if (act.startsWith("snooze")) {
             int m = 10;
             try { m = Integer.parseInt(act.substring(6)); } catch (Exception ignored) { }
