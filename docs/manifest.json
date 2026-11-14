@@ -1,0 +1,1 @@
+{"name": "Ritmi", "short_name": "Ritmi", "start_url": "./index.html", "display": "standalone", "background_color": "#FFF7EF", "theme_color": "#FFD7BF", "lang": "es", "icons": [{"src": "icon.png", "sizes": "512x512", "type": "image/png"}]}
